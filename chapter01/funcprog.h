@@ -1,3 +1,4 @@
+/* funcprog.h */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,7 +28,7 @@
 #define DIV_N 14     // /
 #define MOD_N 15     // %
 #define ASSIGN_N 16  // =
-#define EQUAL_N 17   // ==
+#define EQUAL_N 17   // ==a
 #define NOTEQ_N 18   // !=
 #define LE_N 19      // <
 #define LEEQ_N 20    // <=
