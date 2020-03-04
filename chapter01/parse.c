@@ -81,12 +81,14 @@ static void error(void)
 void parse(void)
 {
     get_token();
-    is_token_or_err(NAME_N);  // function name
+
+    // func-name formal-params '{' var-decl calc-main '}'
+    is_token_or_err(NAME_N);
     formal_parameters();
-    is_token_or_err(LBRACE_N);  // '{'
+    is_token_or_err(LBRACE_N);
     variable_declaration();
     calc_main();
-    is_token_or_err(RBRACE_N);  // '}'
+    is_token_or_err(RBRACE_N);
     is_token_or_err(END_OF_FILE);
 
     return ;
@@ -95,7 +97,7 @@ void parse(void)
 
 static void formal_parameters(void)
 {
-    // '(', vars, ')'
+    // '(' var-names ')'
     is_token_or_err(LPAREN_N);
     variable_names();
     is_token_or_err(RPAREN_N);
@@ -106,7 +108,7 @@ static void formal_parameters(void)
 
 static void variable_names(void)
 {
-    // var { ',', var }
+    // var { ',' var }
     if( is_token_(NAME_N) ){
         while( is_token_(COMMA_N) ){
             is_token_or_err(NAME_N);
@@ -119,7 +121,7 @@ static void variable_names(void)
 
 static void variable_declaration(void)
 {
-    // 'int', vars, ';'
+    // 'int' var-names ';'
     if( is_token_(INT_N) ){
         variable_names();
         is_token_or_err(SEMI_N);
@@ -174,7 +176,7 @@ static int is_val_update_statement(void)
         return False;
     }
 
-    // assignment statement : '=', num-expr
+    // assignment statement : '=' num-expr
     if( is_token_(ASSIGN_N) ){
         numerical_expression();
     }
@@ -201,12 +203,12 @@ static int is_if_statement(void)
         return False;
     }
 
-    // '(', cond-expr, ')'
+    // '(' cond-expr ')'
     is_token_or_err(LPAREN_N);
     conditional_expression();
     is_token_or_err(RPAREN_N);
 
-    // '{', stats, '}' | stat
+    // '{' stats '}' | stat
     if( is_token_(LBRACE_N) ){
         statements();
         is_token_or_err(RBRACE_N);
@@ -236,12 +238,12 @@ static int is_while_statement(void)
         return False;
     }
 
-    // '(', cond-expr, ')'
+    // '(' cond-expr ')'
     is_token_or_err(LPAREN_N);
     conditional_expression();
     is_token_or_err(RPAREN_N);
 
-    // '{', stats, '}' | stat
+    // '{' stats '}' | stat
     if( is_token_(LBRACE_N) ){
         statements();
         is_token_or_err(RBRACE_N);
@@ -260,12 +262,12 @@ static int is_loop_statement(void)
         return False;
     }
 
-    // '(', num-expr, ')'
+    // '(' num-expr ')'
     is_token_or_err(LPAREN_N);
     numerical_expression();
     is_token_or_err(RPAREN_N);
 
-    // '{', stats, '}' | stat
+    // '{' stats '}' | stat
     if( is_token_(LBRACE_N) ){
         statements();
         is_token_or_err(RBRACE_N);
@@ -284,7 +286,7 @@ static int is_return_statement(void)
         return False;
     }
 
-    // '(', num-expr, ')', ';'
+    // '(' num-expr ')' ';'
     is_token_or_err(LPAREN_N);
     numerical_expression();
     is_token_or_err(RPAREN_N);
@@ -296,7 +298,7 @@ static int is_return_statement(void)
 
 static void conditional_expression(void)
 {
-    // simple-cond-expr, { '||', simple-cond_expr }
+    // simple-cond-expr { '||' simple-cond_expr }
     simple_conditional_expression();
     while( is_token_(OR_N) ){
         simple_conditional_expression();
@@ -308,7 +310,7 @@ static void conditional_expression(void)
 
 static void simple_conditional_expression(void)
 {
-    // cond-term, { '&&', cond-term }
+    // cond-term { '&&' cond-term }
     conditional_term();
     while( is_token_(AND_N) ){
         conditional_term();
@@ -320,13 +322,13 @@ static void simple_conditional_expression(void)
 
 static void conditional_term(void)
 {
-    // '(', cond-expr, ')'
-    if( is_token_(LPAREN_N) ){  // '('
+    // '(' cond-expr ')'
+    if( is_token_(LPAREN_N) ){
         conditional_expression();
-        is_token_or_err(RPAREN_N);  // ')'
+        is_token_or_err(RPAREN_N);
     }
-    // '!', cond-term
-    else if( is_token_(NOT_N) ){  // '!'
+    // '!' cond-term
+    else if( is_token_(NOT_N) ){
         conditional_term();
     }
     // atom-cond-expr
@@ -340,7 +342,7 @@ static void conditional_term(void)
 
 static void atom_conditional_expression(void)
 {
-    // num-expr, rel-ope, num-expr, { rel-ope, num-expr }
+    // num-expr rel-ope num-expr { rel-ope num-expr }
     numerical_expression();
     if( is_relational_operator() == False ){
         error();
@@ -387,7 +389,7 @@ static int is_relational_operator(void)
 
 static void numerical_expression(void)
 {
-    // ['-',] simple-num-expr, { add-ope, simple-num-ope }
+    // ['-'] simple-num-expr { add-ope simple-num-ope }
     is_token_(MINUS_N);
     simple_numerical_expression();
     while( is_additive_operator() ){
@@ -415,7 +417,7 @@ static int is_additive_operator(void)
 
 static void simple_numerical_expression(void)
 {
-    // num-term, { mul-ope, num-term }
+    // num-term { mul-ope num-term }
     numerical_term();
     while( is_multiplicative_operator() ){
         numerical_term();
@@ -446,7 +448,7 @@ static int is_multiplicative_operator(void)
 
 static void numerical_term(void)
 {
-    // '(', num-expr, ')'
+    // '(' num-expr ')'
     if( is_token_(LPAREN_N) ){
         numerical_expression();
         is_token_or_err(RPAREN_N);
