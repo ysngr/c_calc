@@ -1,6 +1,6 @@
 # Makefile
 
-OBJS = funcprog.o scan.o parse.o
+OBJS = funcprog.h funcprog.o scan.o parse.o
 
 funcprog : ${OBJS}
 	gcc -o $@ ${OBJS} -Wall

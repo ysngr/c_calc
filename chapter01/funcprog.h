@@ -6,29 +6,30 @@
 
 #define True 1
 #define False 0
-
-#define UNKNOWN -1
-#define END_OF_FILE -2
+#define Empty -1
 
 #define MAXSTRLEN 128
+
+#define UNKNOWN -1
+#define END_OF_FILE 0
 
 #define NAME_N 1     // Name
 #define IF_N 2       // if
 #define ELSE_N 3     // else
 #define WHILE_N 4    // while
 #define LOOP_N 5     // loop
-#define RETURN_N 6  // return
+#define RETURN_N 6   // return
 #define INT_N 7      // int
 #define NUM_N 8      // Number
 #define PLUS_N 9     // +
 #define INC_N 10     // ++
 #define MINUS_N 11   // -
 #define DEC_N 12     // --
-#define TIMES_N 13   // *
+#define MUL_N 13     // *
 #define DIV_N 14     // /
 #define MOD_N 15     // %
 #define ASSIGN_N 16  // =
-#define EQUAL_N 17   // ==a
+#define EQUAL_N 17   // ==
 #define NOTEQ_N 18   // !=
 #define LE_N 19      // <
 #define LEEQ_N 20    // <=
@@ -44,8 +45,6 @@
 #define COMMA_N 30   // ,
 #define COLON_N 31   // :
 #define SEMI_N 32    // ;
-
-#define EMPTY 2
 
 
 /* scan.c */

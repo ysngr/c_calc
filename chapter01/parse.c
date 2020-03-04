@@ -8,36 +8,38 @@ static int token;
 static void get_token(void);
 static int is_token_(int);
 static void is_token_or_err(int);
+static void error(void);
+
 static void formal_parameters(void);
 static void variable_names(void);
 static void variable_declaration(void);
 static void calc_main(void);
 
-static int is_statement(void);
 static void statements(void);
-static int is_assign_statement(void);
-static int is_increment_statement(void);
-static int is_decrement_statement(void);
+static int is_statement(void);
+static int is_val_update_statement(void);
 static int is_if_statement(void);
 static int is_while_statement(void);
 static int is_loop_statement(void);
 static int is_return_statement(void);
 
-static void condition_statements(void);
-static void atom_condition(void);
-static int is_logic_operator(void);
-static void expression(void);
-static int is_compare_operator(void);
-static void int_operand(void);
-static int is_int_operator(void);
-
-static void error(void);
+static void conditional_expression(void);
+static void simple_conditional_expression(void);
+static void conditional_term(void);
+static void atom_conditional_expression(void);
+static int is_relational_operator(void);
+static void numerical_expression(void);
+static int is_additive_operator(void);
+static void simple_numerical_expression(void);
+static int is_multiplicative_operator(void);
+static void numerical_term(void);
+static void atom_numerical_expression(void);
 
 
 
 static void get_token(void)
 {
-    if( (token = scan()) <= 0 ){
+    if( (token = scan()) < 0 ){
         error();
     }
 
@@ -67,8 +69,18 @@ static void is_token_or_err(int cmptoken)
 }
 
 
+static void error(void)
+{
+    printf("Invalid program.\n");
+    exit(EXIT_FAILURE);
+
+    return ;
+}
+
+
 void parse(void)
 {
+    get_token();
     is_token_or_err(NAME_N);  // function name
     formal_parameters();
     is_token_or_err(LBRACE_N);  // '{'
@@ -83,9 +95,10 @@ void parse(void)
 
 static void formal_parameters(void)
 {
-    is_token_or_err(LPAREN_N);  // '('
+    // '(', vars, ')'
+    is_token_or_err(LPAREN_N);
     variable_names();
-    is_token_or_err(RPAREN_N);  // ')'
+    is_token_or_err(RPAREN_N);
 
     return ;
 }
@@ -93,12 +106,11 @@ static void formal_parameters(void)
 
 static void variable_names(void)
 {
-    if( is_token_(NAME_N) == False ){  // variable name
-        return ;
-    }
-
-    while( is_token_(COMMA_N) ){  // ','
-        is_token_or_err(NAME_N);  // variable name
+    // var { ',', var }
+    if( is_token_(NAME_N) ){
+        while( is_token_(COMMA_N) ){
+            is_token_or_err(NAME_N);
+        }
     }
 
     return ;
@@ -107,12 +119,11 @@ static void variable_names(void)
 
 static void variable_declaration(void)
 {
-    if( is_token_(INT_N) == False ){  // int
-        return ;
+    // 'int', vars, ';'
+    if( is_token_(INT_N) ){
+        variable_names();
+        is_token_or_err(SEMI_N);
     }
-
-    variable_names();
-    is_token_or_err(SEMI_N);  // ';'
 
     return ;
 }
@@ -126,70 +137,58 @@ static void calc_main(void)
 }
 
 
-static int is_statement(void)
-{
-    if( is_assign_statement() ){
-        return True;
-    }else if( is_increment_statement() ){
-        return True;
-    }else if( is_decrement_statement() ){
-        return True;
-    }else if( is_if_statement() ){
-        return True;
-    }else if( is_while_statement() ){
-        return True;
-    }else if( is_loop_statement() ){
-        return True;
-    }else if( is_return_statement() ){
-        return True;
-    }
-
-    return EMPTY;  // empty statement
-}
-
-
 static void statements(void)
 {
-    while( is_statement() != EMPTY );
+    while( is_statement() != Empty );
 
     return ;
 }
 
 
-static int is_assign_statement(void)
+static int is_statement(void)
 {
+    if( is_val_update_statement() ){
+        return True;
+    }
+    else if( is_if_statement() ){
+        return True;
+    }
+    else if( is_while_statement() ){
+        return True;
+    }
+    else if( is_loop_statement() ){
+        return True;
+    }
+    else if( is_return_statement() ){
+        return True;
+    }
+
+    return Empty;  // empty statement
+}
+
+
+static int is_val_update_statement(void)
+{
+    // var
     if( is_token_(NAME_N) == False ){
         return False;
     }
 
-    is_token_or_err(EQUAL_N);
-    expression();
-
-    return True;
-}
-
-
-static int is_increment_statement(void)
-{
-    if( is_token_(NAME_N) == False ){  // variable name
-        return False;
+    // assignment statement : '=', num-expr
+    if( is_token_(ASSIGN_N) ){
+        numerical_expression();
+    }
+    // increment statement : '++'
+    else if( is_token_(INC_N) ){
+        // do nothing
+    }
+    // decrement statement : '--'
+    else if( is_token_(DEC_N) ){
+        // do nothing
     }
 
-    is_token_or_err(INC_N);  // '++'
-    is_token_or_err(SEMI_N);  // ';'
-
-    return True;
-}
-
-
-static int is_decrement_statement(void)
-{
-    if( is_token_(NAME_N) == False ){  // variable name
-        return False;
-    }
-
-    is_token_or_err(DEC_N);  // '--'
-    is_token_or_err(SEMI_N);  // ';'
+    // ';'
+    is_token_or_err(SEMI_N);
 
     return True;
 }
@@ -197,24 +196,34 @@ static int is_decrement_statement(void)
 
 static int is_if_statement(void)
 {
-    if( is_token_(IF_N) == False ){  // if
+    // 'if'
+    if( is_token_(IF_N) == False ){
         return False;
     }
 
-    is_token_or_err(LPAREN_N);  // '('
-    condition_statements();
-    is_token_or_err(RPAREN_N);  // ')'
-    is_token_or_err(LBRACE_N);  // '{'
-    statements();
-    is_token_or_err(RBRACE_N);  // '}'
+    // '(', cond-expr, ')'
+    is_token_or_err(LPAREN_N);
+    conditional_expression();
+    is_token_or_err(RPAREN_N);
 
-    if( is_token_(ELSE_N) == False ){  // else
-        return True;
+    // '{', stats, '}' | stat
+    if( is_token_(LBRACE_N) ){
+        statements();
+        is_token_or_err(RBRACE_N);
+    }else{
+        is_statement();
     }
 
-    is_token_or_err(LBRACE_N);  // '{'
-    statements();
-    is_token_or_err(RBRACE_N);  // '}'
+    // 'else'
+    if( is_token_(ELSE_N) ){
+        // '{', stats, '}' | stat
+        if( is_token_(LBRACE_N) ){
+            statements();
+            is_token_or_err(RBRACE_N);
+        }else{
+            is_statement();
+        }
+    }
 
     return True;
 }
@@ -222,14 +231,23 @@ static int is_if_statement(void)
 
 static int is_while_statement(void)
 {
+    // 'while'
     if( is_token_(WHILE_N) == False ){
         return False;
     }
 
-    condition_statements();
-    is_token_or_err(LBRACE_N);  // '{'
-    statements();
-    is_token_or_err(RBRACE_N);  // '}'
+    // '(', cond-expr, ')'
+    is_token_or_err(LPAREN_N);
+    conditional_expression();
+    is_token_or_err(RPAREN_N);
+
+    // '{', stats, '}' | stat
+    if( is_token_(LBRACE_N) ){
+        statements();
+        is_token_or_err(RBRACE_N);
+    }else{
+        is_statement();
+    }
 
     return True;
 }
@@ -237,14 +255,23 @@ static int is_while_statement(void)
 
 static int is_loop_statement(void)
 {
+    // 'loop'
     if( is_token_(LOOP_N) == False ){
         return False;
     }
 
-    expression();
-    is_token_or_err(LBRACE_N);  // '{'
-    statements();
-    is_token_or_err(RBRACE_N);  // '}'
+    // '(', num-expr, ')'
+    is_token_or_err(LPAREN_N);
+    numerical_expression();
+    is_token_or_err(RPAREN_N);
+
+    // '{', stats, '}' | stat
+    if( is_token_(LBRACE_N) ){
+        statements();
+        is_token_or_err(RBRACE_N);
+    }else{
+        is_statement();
+    }
 
     return True;
 }
@@ -252,36 +279,105 @@ static int is_loop_statement(void)
 
 static int is_return_statement(void)
 {
+    // 'return'
     if( is_token_(RETURN_N) == False ){
         return False;
     }
 
-    is_token_or_err(LPAREN_N);  // '('
-    expression();
-    is_token_or_err(RPAREN_N);  // ')'
+    // '(', num-expr, ')', ';'
+    is_token_or_err(LPAREN_N);
+    numerical_expression();
+    is_token_or_err(RPAREN_N);
+    is_token_or_err(SEMI_N);
 
     return True;
 }
 
 
-static void condition_statements(void)
+static void conditional_expression(void)
 {
-    atom_condition();
-    while( is_logic_operator() ){
-        atom_condition();
+    // simple-cond-expr, { '||', simple-cond_expr }
+    simple_conditional_expression();
+    while( is_token_(OR_N) ){
+        simple_conditional_expression();
     }
 
     return ;
 }
 
 
-static int is_logic_operator(void)
+static void simple_conditional_expression(void)
 {
-    if( is_token_(AND_N) ){  // '&&'
+    // cond-term, { '&&', cond-term }
+    conditional_term();
+    while( is_token_(AND_N) ){
+        conditional_term();
+    }
+
+    return ;
+}
+
+
+static void conditional_term(void)
+{
+    // '(', cond-expr, ')'
+    if( is_token_(LPAREN_N) ){  // '('
+        conditional_expression();
+        is_token_or_err(RPAREN_N);  // ')'
+    }
+    // '!', cond-term
+    else if( is_token_(NOT_N) ){  // '!'
+        conditional_term();
+    }
+    // atom-cond-expr
+    else{
+        atom_conditional_expression();
+    }
+
+    return ;
+}
+
+
+static void atom_conditional_expression(void)
+{
+    // num-expr, rel-ope, num-expr, { rel-ope, num-expr }
+    numerical_expression();
+    if( is_relational_operator() == False ){
+        error();
+    }
+    numerical_expression();
+    while( is_relational_operator() ){
+        numerical_expression();
+    }
+
+    return ;
+}
+
+
+static int is_relational_operator(void)
+{
+    // '=='
+    if( is_token_(EQUAL_N) ){
         return True;
-    }else if( is_token_(OR_N) ){  // '||'
+    }
+    // '!='
+    else if( is_token_(NOTEQ_N) ){
         return True;
-    }else if( is_token_(NOT_N) ){  // '!'
+    }
+    // '<'
+    else if( is_token_(LE_N) ){
+        return True;
+    }
+    // '<='
+    else if( is_token_(LEEQ_N) ){
+        return True;
+    }
+    // '>'
+    else if( is_token_(RE_N) ){
+        return True;
+    }
+    // '>='
+    else if( is_token_(REEQ_N) ){
         return True;
     }
 
@@ -289,30 +385,27 @@ static int is_logic_operator(void)
 }
 
 
-static void atom_condition(void)
+static void numerical_expression(void)
 {
-    expression();
-    while( is_compare_operator() ){
-        expression();
+    // ['-',] simple-num-expr, { add-ope, simple-num-ope }
+    is_token_(MINUS_N);
+    simple_numerical_expression();
+    while( is_additive_operator() ){
+        simple_numerical_expression();
     }
 
     return ;
 }
 
 
-static int is_compare_operator(void)
+static int is_additive_operator(void)
 {
-    if( is_token_(EQUAL_N) ){  // '=='
+    // '+'
+    if( is_token_(PLUS_N) ){
         return True;
-    }else if( is_token_(NOTEQ_N) ){  // '!='
-        return True;
-    }else if( is_token_(LE_N) ){  // '<'
-        return True;
-    }else if( is_token_(LEEQ_N) ){  // '<='
-        return True;
-    }else if( is_token_(RE_N) ){  // '>'
-        return True;
-    }else if( is_token_(REEQ_N) ){  // '>='
+    }
+    // '-'
+    else if( is_token_(MINUS_N) ){
         return True;
     }
 
@@ -320,55 +413,78 @@ static int is_compare_operator(void)
 }
 
 
-static void expression(void)
+static void simple_numerical_expression(void)
 {
-    int_operand();
-    while( is_int_operator() ){
-        int_operand();
+    // num-term, { mul-ope, num-term }
+    numerical_term();
+    while( is_multiplicative_operator() ){
+        numerical_term();
     }
 
     return ;
 }
 
 
-static void int_operand(void)
+static int is_multiplicative_operator(void)
 {
-    if( is_token_(NAME_N) ){  // variable | function
+    // '*'
+    if( is_token_(MUL_N) ){
+        return True;
+    }
+    // '/'
+    else if( is_token_(DIV_N) ){
+        return True;
+    }
+    // '%'
+    else if( is_token_(MOD_N) ){
+        return True;
+    }
+
+    return False;
+}
+
+
+static void numerical_term(void)
+{
+    // '(', num-expr, ')'
+    if( is_token_(LPAREN_N) ){
+        numerical_expression();
+        is_token_or_err(RPAREN_N);
+    }
+    // atom-num-expr
+    else{
+        atom_numerical_expression();
+    }
+
+    return ;
+}
+
+
+static void atom_numerical_expression(void)
+{
+    // var | func
+    if( is_token_(NAME_N) ){
+        // '()' | '(' num-exprs, ')'
         if( is_token_(LPAREN_N) ){  // '('
-            variable_names();
-            is_token_or_err(RPAREN_N);  // ')'
-            is_token_or_err(SEMI_N);  // ';'
+            if( is_token_(RPAREN_N) ){  // ')'
+                // do nothing
+            }else{
+                numerical_expression();
+                while( is_token_(COMMA_N) ){
+                    numerical_expression();
+                }
+                is_token_or_err(RPAREN_N);  // ')'
+            }
         }
-    }else if( is_token_(NUM_N) ){  // Number
+    }
+    // int-const
+    else if( is_token_(NUM_N) ){
         // do nothing
-    }else{
+    }
+    // otherwise
+    else{
         error();
     }
 
     return ;
-}
-
-
-static int is_int_operator(void)
-{
-    if( is_token_(PLUS_N) ){  // '+'
-        return True;
-    }else if( is_token_(MINUS_N) ){  // '-'
-        return True;
-    }else if( is_token_(TIMES_N) ){  // '*'
-        return True;
-    }else if( is_token_(DIV_N) ){  // '/'
-        return True;
-    }else if( is_token_(MOD_N) ){  // '%'
-        return True;
-    }
-
-    return False;
-}
-
-
-static void error(void)
-{
-    printf("Invalid program.\n");
-    exit(EXIT_FAILURE);
 }

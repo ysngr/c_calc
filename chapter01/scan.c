@@ -1,7 +1,9 @@
 /* scan.c */
 #include "funcprog.h"
 
+// #define PRINTPROG
 #define KEYWORDNUM 6
+
 
 struct key{
     int keynum;
@@ -45,6 +47,14 @@ void init_scan(const char *filename)
 static void scanc(void)
 {
     c = fgetc(fp);
+
+    #ifdef PRINTPROG
+    if( c == EOF ){
+        printf("\n");
+    }else{
+        printf("%c", c);
+    }
+    #endif
 
     return ;
 }
@@ -110,7 +120,7 @@ int scan(void)
                     ungetc(c, fp);
                 }
                 break;
-            case '*' : token = TIMES_N; break;
+            case '*' : token = MUL_N; break;
             case '/' : token = DIV_N; break;
             case '%' : token = MOD_N; break;
             case '=' :
@@ -174,6 +184,7 @@ int scan(void)
             case ';' : token = SEMI_N; break;
             default : token = UNKNOWN;
         }
+        scanc();
     }
 
     return token;
