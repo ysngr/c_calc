@@ -1,7 +1,7 @@
 /* scan.c */
 #include "funcprog.h"
 
-// #define PRINTPROG
+#define PRINTPROG
 #define KEYWORDNUM 6
 
 
@@ -65,6 +65,7 @@ int scan(void)
     int i;
     int token;
 
+    BEGIN_SCAN:
     while( is_invalid_char() ){
         scanc();
     }
@@ -121,7 +122,26 @@ int scan(void)
                 }
                 break;
             case '*' : token = MUL_N; break;
-            case '/' : token = DIV_N; break;
+            case '/' :
+                scanc();
+                if( c == '*' ){  // comment
+                    char pc;
+                    scanc();
+                    while( pc != '*' || c != '/' ){
+                        pc = c;
+                        scanc();
+                        if( c == EOF ){
+                            printf("Expected \'*/\' but not found.\n");
+                            exit(EXIT_FAILURE);
+                        }
+                    }
+                    scanc();
+                    goto BEGIN_SCAN;
+                }else {
+                    token = DIV_N;
+                    ungetc(c, fp);
+                }
+                break;
             case '%' : token = MOD_N; break;
             case '=' :
                 scanc();

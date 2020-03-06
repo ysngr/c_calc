@@ -71,7 +71,7 @@ static void is_token_or_err(int cmptoken)
 
 static void error(void)
 {
-    printf("Invalid program.\n");
+    printf("\nInvalid program.\n");
     exit(EXIT_FAILURE);
 
     return ;
