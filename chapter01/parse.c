@@ -64,7 +64,7 @@ static int is_token_(int cmptoken)
         if( fs.is_var_def ){
             define_variable();
         }else{
-            // reference_variable();
+            reference_variable();
         }
     }
 
@@ -124,9 +124,9 @@ void parse(void)
         variable_declaration();
         calc_main();
         is_token_or_err(RBRACE_N);
-        // is_token_or_err(END_OF_FILE);
     }while( is_token_(END_OF_FILE) == False );
-    debugprint();
+
+    debugprint();//TODO delete
 
     return ;
 }

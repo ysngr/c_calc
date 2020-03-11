@@ -72,7 +72,7 @@ void define_variable(void)
     // function program name
     if( f->fprogname == NULL ){
         if( is_funcprog_declared() ){
-            printf("Function program \"%s\" is duplicated.\n", str);
+            printf("\nFunction program \"%s\" is duplicated.\n", str);
             exit(EXIT_FAILURE);
         }
 
@@ -83,7 +83,7 @@ void define_variable(void)
     // variable name
     else{
         if( is_variable_declared() ){
-            printf("Variable \"%s\" is duplicated.\n", str);
+            printf("\nVariable \"%s\" is duplicated.\n", str);
             exit(EXIT_FAILURE);
         }
 
@@ -109,7 +109,7 @@ void define_variable(void)
 void reference_variable(void)
 {
     if( is_variable_declared() == False ){
-        printf("Variable %s is not declared.\n", str);
+        printf("\nVariable \"%s\" is not declared.\n", str);
         exit(EXIT_FAILURE);
     }
 
@@ -140,9 +140,18 @@ static int is_funcprog_declared(void)
 static int is_variable_declared(void)
 {
     struct varlist *p;
+    struct fproglist *fp;
 
+    // variable name
     for( p = f->vars; p != NULL; p = p->nextvar ){
         if( strcmp(p->varname, str) == 0 ){
+            return True;
+        }
+    }
+
+    // function program name
+    for( fp = fs; fp != NULL; fp = fp->nextfprog ){
+        if( strcmp(fp->fprogname, str) == 0 ){
             return True;
         }
     }
