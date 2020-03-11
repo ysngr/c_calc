@@ -158,21 +158,3 @@ static int is_variable_declared(void)
 
     return False;
 }
-
-
-
-
-///debug func
-void debugprint(void){
-    struct fproglist *fp;
-    struct varlist *p;
-    for(fp=fs; fp!= NULL; fp = fp->nextfprog){
-        printf("funcprog = %s\n", fp->fprogname);
-        printf("vars = ");
-        for(p=fp->vars; p!=NULL; p=p->nextvar){
-            printf("%s, ", p->varname);
-        }
-        printf("\n");
-    }
-    printf("\n");
-}

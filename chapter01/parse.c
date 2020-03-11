@@ -126,8 +126,6 @@ void parse(void)
         is_token_or_err(RBRACE_N);
     }while( is_token_(END_OF_FILE) == False );
 
-    debugprint();//TODO delete
-
     return ;
 }
 
