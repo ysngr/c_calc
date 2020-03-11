@@ -4,11 +4,18 @@
 
 static int token;
 
+static struct flags{
+    int is_var_def;
+} fs;
+
 
 static void get_token(void);
 static int is_token_(int);
 static void is_token_or_err(int);
 static void error(void);
+
+static void init_parse(void);
+static void init_flag(void);
 
 static void formal_parameters(void);
 static void variable_names(void);
@@ -53,6 +60,14 @@ static int is_token_(int cmptoken)
         return False;
     }
 
+    if( cmptoken == NAME_N ){
+        if( fs.is_var_def ){
+            define_variable();
+        }else{
+            // reference_variable();
+        }
+    }
+
     get_token();
 
     return True;
@@ -78,18 +93,40 @@ static void error(void)
 }
 
 
-void parse(void)
+static void init_parse(void)
 {
+    init_register();
     get_token();
 
-    // func-name formal-params '{' var-decl calc-main '}'
-    is_token_or_err(NAME_N);
-    formal_parameters();
-    is_token_or_err(LBRACE_N);
-    variable_declaration();
-    calc_main();
-    is_token_or_err(RBRACE_N);
-    is_token_or_err(END_OF_FILE);
+    return ;
+}
+
+
+static void init_flag(void)
+{
+    fs.is_var_def = True;
+
+    return ;
+}
+
+
+void parse(void)
+{
+    init_parse();
+
+    do{
+        init_flag();
+        init_fprog_list();
+        // func-name formal-params '{' var-decl calc-main '}'
+        is_token_or_err(NAME_N);
+        formal_parameters();
+        is_token_or_err(LBRACE_N);
+        variable_declaration();
+        calc_main();
+        is_token_or_err(RBRACE_N);
+        // is_token_or_err(END_OF_FILE);
+    }while( is_token_(END_OF_FILE) == False );
+    debugprint();
 
     return ;
 }
@@ -133,6 +170,7 @@ static void variable_declaration(void)
 
 static void calc_main(void)
 {
+    fs.is_var_def = False;
     statements();
 
     return ;

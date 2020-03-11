@@ -56,3 +56,11 @@ void end_scan(void);
 
 /* parse.c */
 void parse(void);
+
+/* register.c */
+void init_register(void);
+void init_fprog_list(void);
+void define_variable(void);
+void reference_variable(void);
+
+void debugprint(void);
