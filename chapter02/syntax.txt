@@ -1,4 +1,4 @@
-< chapter01 >
+< chapter02 >
 
 func-prog -> func-name formal-params '{' var-decl calc-main '}'
 func-name -> Name
@@ -12,10 +12,11 @@ stats -> { [label] stat }
 stat -> val-update-stat | if-stat | while-stat | loop-stat | return-stat | goto-stat | empty-stat
 label -> label-name ':'
 label-name -> Name
-val-update-stat -> assign-stat | incr-stat | decr-stat
+val-update-stat -> assign-stat | incr-stat | decr-stat | cond-decr-stat
 assign-stat -> var '=' num-expr ';'
 incr-stat -> var '++' ';'
 decr-stat -> var '--' ';'
+cond-decr-stat -> var '--'' ';'
 if-stat -> 'if' '(' cond-expr ')' (stat | '{' stats '}') ['else' (stat | '{' stats '}')]
 while-stat -> 'while' '(' cond-expr ')' (stat | '{' stats '}')
 loop-stat -> 'loop' '(' num-expr ')' (stat | '{' stats '}')
