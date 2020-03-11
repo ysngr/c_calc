@@ -24,8 +24,13 @@ int num;
 
 static FILE *fp;
 static char c;
+static struct flas{
+    int is_ungetc_exec;
+} fs;
 
+static void init_flag(void);
 static void scanc(void);
+static int Ungetc(int, FILE*);
 static int is_invalid_char(void);
 static int str_to_tokennum(void);
 
@@ -38,7 +43,16 @@ void init_scan(const char *filename)
         exit(EXIT_FAILURE);
     }
 
+    init_flag();
     scanc();
+
+    return ;
+}
+
+
+static void init_flag(void)
+{
+    fs.is_ungetc_exec = False;
 
     return ;
 }
@@ -49,14 +63,25 @@ static void scanc(void)
     c = fgetc(fp);
 
     #ifdef PRINTPROG
-    if( c == EOF ){
-        printf("\n");
-    }else{
-        printf("%c", c);
-    }
+        if( fs.is_ungetc_exec ){
+            fs.is_ungetc_exec = False;
+        }else if( c == EOF ){
+            printf("\n");
+        }else{
+            printf("%c", c);
+        }
     #endif
 
     return ;
+}
+
+
+static int Ungetc(int c, FILE *stream)
+{
+    ungetc(c, stream);
+    fs.is_ungetc_exec = True;
+
+    return (unsigned int)c;
 }
 
 
@@ -109,7 +134,7 @@ int scan(void)
                     token = INC_N;
                 }else{
                     token = PLUS_N;
-                    ungetc(c, fp);
+                    Ungetc(c, fp);
                 }
                 break;
             case '-' :
@@ -118,7 +143,7 @@ int scan(void)
                     token = DEC_N;
                 }else{
                     token = MINUS_N;
-                    ungetc(c, fp);
+                    Ungetc(c, fp);
                 }
                 break;
             case '*' : token = MUL_N; break;
@@ -139,7 +164,7 @@ int scan(void)
                     goto BEGIN_SCAN;
                 }else {
                     token = DIV_N;
-                    ungetc(c, fp);
+                    Ungetc(c, fp);
                 }
                 break;
             case '%' : token = MOD_N; break;
@@ -149,7 +174,7 @@ int scan(void)
                     token = EQUAL_N;
                 }else{
                     token = ASSIGN_N;
-                    ungetc(c, fp);
+                    Ungetc(c, fp);
                 }
                 break;
             case '!' :
@@ -158,7 +183,7 @@ int scan(void)
                     token = NOTEQ_N;
                 }else{
                     token = NOT_N;
-                    ungetc(c, fp);
+                    Ungetc(c, fp);
                 }
                 break;
             case '<' :
@@ -167,7 +192,7 @@ int scan(void)
                     token = LEEQ_N;
                 }else{
                     token = LE_N;
-                    ungetc(c, fp);
+                    Ungetc(c, fp);
                 }
                 break;
             case '>' :
@@ -176,7 +201,7 @@ int scan(void)
                     token = REEQ_N;
                 }else{
                     token = RE_N;
-                    ungetc(c, fp);
+                    Ungetc(c, fp);
                 }
                 break;
             case '&' :
