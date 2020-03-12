@@ -8,7 +8,7 @@ var -> Name
 var-decl -> 'int' var-names ';'
 calc-main -> stats
 
-stats -> { [label] stat }
+stats -> { {label} stat }
 stat -> val-update-stat | if-stat | while-stat | loop-stat | return-stat | goto-stat | empty-stat
 label -> label-name ':'
 label-name -> Name
