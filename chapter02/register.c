@@ -24,7 +24,7 @@ static struct fproglist{
 static void *Malloc(int);
 static int is_funcprog_declared(void);
 static int is_variable_declared(void);
-static struct labellist *find_label(void);
+static struct labellist *find_label(char*);
 
 
 
@@ -176,7 +176,7 @@ void generate_label(void)
     int len_str = strlen(str) + 1;
     struct labellist *nl;
 
-    if( (nl = find_label()) != NULL ){
+    if( (nl = find_label(str)) != NULL ){
         nl->is_used_for_dep = True;
         return ;
     }
@@ -201,14 +201,14 @@ void generate_label(void)
 }
 
 
-void paste_label(void)
+void paste_label(char *label)
 {
-    int len_str = strlen(str) + 1;
+    int len_str = strlen(label) + 1;
     struct labellist *nl;
 
-    if( (nl = find_label()) != NULL ){
+    if( (nl = find_label(label)) != NULL ){
         if( nl->is_used_for_arr == True ){
-            printf("Label \"%s\" is used multiple times.\n", str);
+            printf("Label \"%s\" is used multiple times.\n", label);
             exit(EXIT_FAILURE);
         }
         nl->is_used_for_arr = True;
@@ -218,7 +218,7 @@ void paste_label(void)
     // generate new node
     nl = (struct labellist*)Malloc(sizeof(struct labellist));
     nl->labelname = (char*)Malloc(sizeof(char)*len_str);
-    strncpy(nl->labelname, str, len_str);
+    strncpy(nl->labelname, label, len_str);
     nl->is_used_for_dep = False;
     nl->is_used_for_arr = True;
     nl->nextlabel = NULL;
@@ -235,15 +235,57 @@ void paste_label(void)
 }
 
 
-static struct labellist *find_label(void)
+static struct labellist *find_label(char *label)
 {
     struct labellist *p;
 
     for( p = f->labels; p != NULL; p = p->nextlabel ){
-        if( strcmp(p->labelname, str) == 0 ){
+        if( strcmp(p->labelname, label) == 0 ){
             return p;
         }
     }
 
     return NULL;
+}
+
+
+void check_label_link(void)
+{
+    struct labellist *lp;
+
+    for( lp = f->labels; lp != NULL; lp = lp->nextlabel ){
+        if( lp->is_used_for_dep && ! lp->is_used_for_arr ){
+            printf("Invalid correspondence of label \"%s\".\n", lp->labelname);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    return ;
+}
+
+
+
+// debug function
+void print_list(void)
+{
+    struct fproglist *fp;
+    struct varlist *vp;
+    struct labellist *lp;
+
+    // funcprog
+    for( fp = fs; fp != NULL; fp = fp->nextfprog ){
+        printf("Funcprog = %s\n", fp->fprogname);
+        // var
+        printf("Vars =");
+        for( vp = fp->vars; vp != NULL; vp = vp->nextvar ){
+            printf(" %s", vp->varname);
+        }
+        printf("\n");
+        // label
+        printf("Labels =");
+        for( lp = fp->labels; lp != NULL; lp = lp->nextlabel ){
+            printf(" %s", lp->labelname);
+        }
+        printf("\n");
+    }
 }

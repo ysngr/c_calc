@@ -65,4 +65,9 @@ void init_fprog_list(void);
 void define_variable(void);
 void reference_variable(void);
 void generate_label(void);
-void paste_label(void);
+void paste_label(char*);
+void check_label_link(void);
+
+
+// debug function
+void print_list(void);

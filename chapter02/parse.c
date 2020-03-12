@@ -158,7 +158,11 @@ void parse(void)
         variable_declaration();
         calc_main();
         is_token_or_err(RBRACE_N);
+
+        check_label_link();
     }while( is_token_(END_OF_FILE) == False );
+
+    // print_list();  // for debug
 
     return ;
 }
@@ -212,7 +216,7 @@ static void calc_main(void)
 static void statements(void)
 {
     do{
-        is_label();
+        while( is_label() );
     }while( is_statement() != Empty );
 
     return ;
@@ -231,13 +235,15 @@ static int is_label(void)
     prevnum = num;
 
     // label
-    if( is_token_(NAME_N) == False ){
+    if( token != NAME_N ){
         return False;
     }
+    // paste_label();
+    get_token();
 
     // ':'
-    if( is_token_(COMMA_N) ){
-        paste_label();
+    if( is_token_(COLON_N) ){
+        paste_label(prevstr);
         return True;
     }
 
