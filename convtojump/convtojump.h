@@ -68,6 +68,9 @@ void generate_label(void);
 void paste_label(char*);
 void check_label_link(void);
 
+/* generator.c */
+void initialize_generator(char*);
+void finalize_generator(void);
 
 // debug function
 void print_list(void);

@@ -99,6 +99,7 @@ static int is_token_(int cmptoken)
         }
     }
 
+    generate(token);
     get_token();
 
     return True;

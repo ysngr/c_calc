@@ -10,7 +10,9 @@ int main(int argc, char *argv[])
     }
 
     init_scan(argv[1]);
+    initialize_generator(argv[1]);
     parse();
+    finalize_generator();
     end_scan();
     printf("Valid program.\n");
 
