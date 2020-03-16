@@ -70,6 +70,8 @@ void check_label_link(void);
 
 /* generator.c */
 void initialize_generator(char*);
+void generate(int);
+void generate_expr(char*);
 void finalize_generator(void);
 
 // debug function

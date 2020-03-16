@@ -4,7 +4,7 @@
 
 static FILE *fp;
 
-static void separate_extension(char*);
+static void separate_extension(char*, char*, char*);
 
 
 
@@ -15,7 +15,7 @@ void initialize_generator(char *inputfile)
     char outputfile[MAXSTRLEN];
 
     separate_extension(inputfile, inputfiledelext, extension);
-    snprintf(outputfile, MAXSTRLEN, "%s_jump.%s", inputfiledelext, extension);
+    snprintf(outputfile, MAXSTRLEN, "%s_jump%s", inputfiledelext, extension);
 
     if( (fp = fopen(outputfile, "w")) == NULL ){
         printf("Output file cannot be generated.\n");
@@ -47,6 +47,14 @@ static void separate_extension(char *file, char *name, char *ext)
 void generate(int token)
 {
     // TODO
+
+    return ;
+}
+
+
+void generate_expr(char *expr)
+{
+    fprintf(fp, "%s\n", expr);  // TODO \n
 
     return ;
 }

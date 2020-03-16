@@ -3,6 +3,8 @@
 
 
 static int token;
+static char expr_r[MAXSTRLEN];
+
 static struct buffer{
     int nexttoken;
     int nextnum;
@@ -13,6 +15,7 @@ static struct flags{
     int is_var_def;
     int is_label_dep;
     int is_token_buf_exist;
+    int is_generate_token;
 } fs;
 
 
@@ -46,11 +49,13 @@ static void conditional_term(void);
 static void atom_conditional_expression(void);
 static int is_relational_operator(void);
 static void numerical_expression(void);
-static int is_additive_operator(void);
+static int is_additive_operator(char*);
 static void simple_numerical_expression(void);
-static int is_multiplicative_operator(void);
+static int is_multiplicative_operator(char*);
 static void numerical_term(void);
 static void atom_numerical_expression(void);
+
+static void exprcat(char*, char*, char*, char*);
 
 
 
@@ -99,7 +104,10 @@ static int is_token_(int cmptoken)
         }
     }
 
-    generate(token);
+    if( fs.is_generate_token ){
+        generate(token);
+    }
+
     get_token();
 
     return True;
@@ -139,6 +147,7 @@ static void init_flag(void)
     fs.is_var_def = True;
     fs.is_label_dep = False;
     fs.is_token_buf_exist = False;
+    fs.is_generate_token = True;
 
     return ;
 }
@@ -528,25 +537,51 @@ static int is_relational_operator(void)
 
 static void numerical_expression(void)
 {
+    int is_minus_exist;
+    char expr_l[MAXSTRLEN], expr_o[MAXSTRLEN], exprstr[MAXSTRLEN];
+
+    fs.is_generate_token = False;
+
     // ['-'] simple-num-expr { add-ope simple-num-ope }
-    is_token_(MINUS_N);
-    simple_numerical_expression();
-    while( is_additive_operator() ){
-        simple_numerical_expression();
+    if( is_token_(MINUS_N) ){
+        is_minus_exist = True;
+    }else{
+        is_minus_exist = False;
     }
+
+    simple_numerical_expression();
+    if( is_minus_exist ){
+        strcpy(expr_l, "0");
+        strcpy(expr_o, "_sub");
+        exprcat(exprstr, expr_l, expr_o, expr_r);
+        strcpy(expr_l, exprstr);
+    }else{
+        strcpy(expr_l, expr_r);
+    }
+
+    while( is_additive_operator(expr_o) ){
+        simple_numerical_expression();
+        exprcat(exprstr, expr_l, expr_o, expr_r);
+        strcpy(expr_l, exprstr);
+    }
+
+    generate_expr(expr_l);
+    fs.is_generate_token = True;
 
     return ;
 }
 
 
-static int is_additive_operator(void)
+static int is_additive_operator(char *expr_o)
 {
     // '+'
     if( is_token_(PLUS_N) ){
+        strcpy(expr_o, "_add");
         return True;
     }
     // '-'
     else if( is_token_(MINUS_N) ){
+        strcpy(expr_o, "_sub");
         return True;
     }
 
@@ -556,28 +591,39 @@ static int is_additive_operator(void)
 
 static void simple_numerical_expression(void)
 {
+    char expr_l[MAXSTRLEN], expr_o[MAXSTRLEN], exprstr[MAXSTRLEN];
+
     // num-term { mul-ope num-term }
     numerical_term();
-    while( is_multiplicative_operator() ){
+    strcpy(expr_l, expr_r);
+
+    while( is_multiplicative_operator(expr_o) ){
         numerical_term();
+        exprcat(exprstr, expr_l, expr_o, expr_r);
+        strcpy(expr_l, exprstr);
     }
+
+    strcpy(expr_r, expr_l);
 
     return ;
 }
 
 
-static int is_multiplicative_operator(void)
+static int is_multiplicative_operator(char *expr_o)
 {
     // '*'
     if( is_token_(MUL_N) ){
+        strcpy(expr_o, "_mul");
         return True;
     }
     // '/'
     else if( is_token_(DIV_N) ){
+        strcpy(expr_o, "_div");
         return True;
     }
     // '%'
     else if( is_token_(MOD_N) ){
+        strcpy(expr_o, "_mod");
         return True;
     }
 
@@ -587,10 +633,14 @@ static int is_multiplicative_operator(void)
 
 static void numerical_term(void)
 {
+    char exprstr[MAXSTRLEN];
+
     // '(' num-expr ')'
     if( is_token_(LPAREN_N) ){
         numerical_expression();
+        strcpy(exprstr, expr_r);
         is_token_or_err(RPAREN_N);
+        snprintf(expr_r, MAXSTRLEN, "(%s)", exprstr);
     }
     // atom-num-expr
     else{
@@ -603,29 +653,63 @@ static void numerical_term(void)
 
 static void atom_numerical_expression(void)
 {
+    char exprstr[MAXSTRLEN];
+
     // var | func
     if( is_token_(NAME_N) ){
         // '()' | '(' num-exprs, ')'
         if( is_token_(LPAREN_N) ){  // '('
+            strcat(str, "(");
+            // func()
             if( is_token_(RPAREN_N) ){  // ')'
-                // do nothing
-            }else{
+                strcat(str, ")");
+                strcpy(expr_r, str);
+                return ;
+            }
+            // func(fp, ... ,fp)
+            else{
+                strcpy(exprstr, str);
                 numerical_expression();
-                while( is_token_(COMMA_N) ){
+                strcat(exprstr, expr_r);
+                while( is_token_(COMMA_N) ){  // ','
+                    strcat(exprstr, ",");
                     numerical_expression();
+                    strcat(exprstr, expr_r);
                 }
                 is_token_or_err(RPAREN_N);  // ')'
+                strcat(exprstr, ")");
+                strcpy(expr_r, exprstr);
+                return ;
             }
         }
+        // var
+        strcpy(expr_r, str);
+        return ;
     }
+
     // int-const
     else if( is_token_(NUM_N) ){
-        // do nothing
+        strcpy(expr_r, str);
     }
+
     // otherwise
     else{
         error();
     }
+
+    return ;
+}
+
+
+static void exprcat(char *expr, char *l, char *o, char *r)
+{
+    // str <- o(l,r)
+    snprintf(expr, MAXSTRLEN, "%s(%s,%s)", o, l, r);
+
+    // initialize
+    memset(l, '\0', MAXSTRLEN);
+    memset(o, '\0', MAXSTRLEN);
+    memset(r, '\0', MAXSTRLEN);
 
     return ;
 }
