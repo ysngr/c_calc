@@ -4,6 +4,16 @@
 
 static FILE *fp;
 
+static char token_to_str[TOKEN_NUM][MAXSTRLEN] = {
+    ""      , ""      , "if"    , "else"  , "while" ,
+    "loop"  , "return", "goto"  , "int"   , ""      ,
+    "+"     , "++"    , "-"     , "--"    , "--\'"  ,
+    "*"     , "/"     , "%"     , "="     , "=="    ,
+    "!="    , "<"     , "<="    , ">"     , ">="    ,
+    "&&"    , "||"    , "!"     , "("     , ")"     ,
+    "{"     , "}"     , ","     , ":"     , ";"
+};
+
 static void separate_extension(char*, char*, char*);
 
 
@@ -46,7 +56,19 @@ static void separate_extension(char *file, char *name, char *ext)
 
 void generate(int token)
 {
-    // TODO
+    fprintf(fp, "%s", token_to_str[token]);
+
+    switch( token ){
+        case NAME_N :
+        case NUM_N :
+            fprintf(fp, "%s", str);
+            break;
+        case LBRACE_N :
+        case RBRACE_N :
+        case SEMI_N :
+            fprintf(fp, "\n");
+            break;
+    }
 
     return ;
 }
@@ -54,7 +76,7 @@ void generate(int token)
 
 void generate_expr(char *expr)
 {
-    fprintf(fp, "%s\n", expr);  // TODO \n
+    fprintf(fp, "%s", expr);
 
     return ;
 }

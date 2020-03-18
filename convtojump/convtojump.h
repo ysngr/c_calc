@@ -47,6 +47,7 @@
 #define COMMA_N 32   // ,
 #define COLON_N 33   // :
 #define SEMI_N 34    // ;
+#define TOKEN_NUM 35
 
 
 /* scan.c */
