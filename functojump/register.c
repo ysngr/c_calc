@@ -1,5 +1,5 @@
 /* register.c */
-#include "convtojump.h"
+#include "functojump.h"
 
 static struct varlist{
     char *varname;

@@ -1,5 +1,5 @@
 /* parse.c */
-#include "convtojump.h"
+#include "functojump.h"
 
 
 static int token;

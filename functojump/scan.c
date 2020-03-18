@@ -1,5 +1,5 @@
 /* scan.c */
-#include "convtojump.h"
+#include "functojump.h"
 
 // #define PRINTPROG
 #define KEYWORDNUM 7

@@ -1,5 +1,5 @@
-/* convtojump.c */
-#include "convtojump.h"
+/* functojump.c */
+#include "functojump.h"
 
 
 int main(int argc, char *argv[])

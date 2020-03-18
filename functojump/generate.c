@@ -1,5 +1,5 @@
 /* generate.c */
-#include "convtojump.h"
+#include "functojump.h"
 
 
 static FILE *fp;
