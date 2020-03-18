@@ -29,7 +29,7 @@ static struct flas{
     int is_ungetc_exec;
 } fs;
 
-static void init_flag(void);
+static void initialize_flag(void);
 static void scanc(void);
 static int Ungetc(int, FILE*);
 static int is_invalid_char(void);
@@ -37,21 +37,21 @@ static int str_to_tokennum(void);
 
 
 
-void init_scan(const char *filename)
+void initialize_scan(const char *filename)
 {
     if( (fp = fopen(filename, "r")) == NULL ){
         printf("File does not exist.\n");
         exit(EXIT_FAILURE);
     }
 
-    init_flag();
+    initialize_flag();
     scanc();
 
     return ;
 }
 
 
-static void init_flag(void)
+static void initialize_flag(void)
 {
     fs.is_ungetc_exec = False;
 
@@ -271,7 +271,7 @@ static int str_to_tokennum(void)
 }
 
 
-void end_scan(void)
+void finalize_scan(void)
 {
     fclose(fp);
 

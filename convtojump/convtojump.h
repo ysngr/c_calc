@@ -53,23 +53,23 @@
 /* scan.c */
 extern char str[MAXSTRLEN];
 extern int num;
-void init_scan(const char*);
+void initialize_scan(const char*);
 int scan(void);
-void end_scan(void);
+void finalize_scan(void);
 
 /* parse.c */
 void parse(void);
 
 /* register.c */
-void init_register(void);
-void init_fprog_list(void);
+void initialize_register(void);
+void initialize_fprog_list(void);
 void define_variable(void);
 void reference_variable(void);
 void generate_label(void);
 void paste_label(char*);
 void check_label_link(void);
 
-/* generator.c */
+/* generate.c */
 void initialize_generator(char*);
 void generate(int);
 void generate_expr(char*);

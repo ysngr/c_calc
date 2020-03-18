@@ -41,7 +41,7 @@ static void *Malloc(int size)
 }
 
 
-void init_register(void)
+void initialize_register(void)
 {
     fs = NULL;
     f = NULL;
@@ -51,7 +51,7 @@ void init_register(void)
 }
 
 
-void init_fprog_list(void)
+void initialize_fprog_list(void)
 {
     struct fproglist *nf;
 

@@ -1,6 +1,6 @@
 # Makefile
 
-OBJS = convtojump.h convtojump.o scan.o parse.o register.o generator.o
+OBJS = convtojump.h convtojump.o scan.o parse.o register.o generate.o
 
 convtojump : ${OBJS}
 	gcc -o $@ ${OBJS} -Wall

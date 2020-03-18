@@ -25,8 +25,8 @@ static int is_token_(int);
 static void is_token_or_err(int);
 static void error(void);
 
-static void init_parse(void);
-static void init_flag(void);
+static void initialize_parse(void);
+static void initialize_flag(void);
 
 static void formal_parameters(void);
 static void variable_names(void);
@@ -126,23 +126,23 @@ static void is_token_or_err(int cmptoken)
 
 static void error(void)
 {
-    printf("\nInvalid program.\n");
+    printf("Invalid program.\n");
     exit(EXIT_FAILURE);
 
     return ;
 }
 
 
-static void init_parse(void)
+static void initialize_parse(void)
 {
-    init_register();
+    initialize_register();
     get_token();
 
     return ;
 }
 
 
-static void init_flag(void)
+static void initialize_flag(void)
 {
     fs.is_var_def = True;
     fs.is_label_dep = False;
@@ -155,11 +155,11 @@ static void init_flag(void)
 
 void parse(void)
 {
-    init_parse();
+    initialize_parse();
 
     do{
-        init_flag();
-        init_fprog_list();
+        initialize_flag();
+        initialize_fprog_list();
 
         // func-name formal-params '{' var-decl calc-main '}'
         is_token_or_err(NAME_N);

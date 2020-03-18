@@ -9,11 +9,11 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    init_scan(argv[1]);
+    initialize_scan(argv[1]);
     initialize_generator(argv[1]);
     parse();
     finalize_generator();
-    end_scan();
+    finalize_scan();
     printf("Valid program.\n");
 
     return 0;

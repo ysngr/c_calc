@@ -1,4 +1,4 @@
-/* generator.c */
+/* generate.c */
 #include "convtojump.h"
 
 
