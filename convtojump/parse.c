@@ -16,6 +16,7 @@ static struct flags{
     int is_label_dep;
     int is_token_buf_exist;
     int is_generate_token;
+    int is_argument;
 } fs;
 
 
@@ -148,6 +149,7 @@ static void initialize_flag(void)
     fs.is_label_dep = False;
     fs.is_token_buf_exist = False;
     fs.is_generate_token = True;
+    fs.is_argument = False;
 
     return ;
 }
@@ -567,8 +569,12 @@ static void numerical_expression(void)
         strcpy(expr_l, exprstr);
     }
 
-    generate_expr(expr_l);
-    fs.is_generate_token = True;
+    if( fs.is_argument ){
+        strcpy(expr_r, expr_l);
+    }else{
+        generate_expr(expr_l);
+        fs.is_generate_token = True;
+    }
 
     return ;
 }
@@ -659,34 +665,31 @@ static void atom_numerical_expression(void)
 
     // var | func
     if( is_token_(NAME_N) ){
+        strcpy(exprstr, str);
         // '()' | '(' num-exprs, ')'
         if( is_token_(LPAREN_N) ){  // '('
-            strcat(str, "(");
+            strcat(exprstr, "(");
             // func()
             if( is_token_(RPAREN_N) ){  // ')'
-                strcat(str, ")");
-                strcpy(expr_r, str);
-                return ;
+                strcat(exprstr, ")");
             }
             // func(fp, ... ,fp)
             else{
-                strcpy(exprstr, str);
+                fs.is_argument = True;
                 numerical_expression();
                 strcat(exprstr, expr_r);
                 while( is_token_(COMMA_N) ){  // ','
-                    strcat(exprstr, ",");
+                    strcat(exprstr, ", ");
                     numerical_expression();
                     strcat(exprstr, expr_r);
                 }
                 is_token_or_err(RPAREN_N);  // ')'
                 strcat(exprstr, ")");
-                strcpy(expr_r, exprstr);
-                return ;
+                fs.is_argument = False;
             }
         }
         // var
-        strcpy(expr_r, str);
-        return ;
+        strcpy(expr_r, exprstr);
     }
 
     // int-const
