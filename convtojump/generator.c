@@ -3,6 +3,10 @@
 
 
 static FILE *fp;
+static int depth;
+static struct flags{
+    int is_gen_indent;
+} fs;
 
 static char token_to_str[TOKEN_NUM][MAXSTRLEN] = {
     ""      , ""      , "if"    , "else"  , "while" ,
@@ -15,6 +19,9 @@ static char token_to_str[TOKEN_NUM][MAXSTRLEN] = {
 };
 
 static void separate_extension(char*, char*, char*);
+static void generate_space_before(int);
+static void generate_space_after(int);
+static void generate_indent(void);
 
 
 
@@ -31,6 +38,9 @@ void initialize_generator(char *inputfile)
         printf("Output file cannot be generated.\n");
         exit(EXIT_FAILURE);
     }
+
+    depth = 0;
+    fs.is_gen_indent = False;
 
     return ;
 }
@@ -56,6 +66,14 @@ static void separate_extension(char *file, char *name, char *ext)
 
 void generate(int token)
 {
+    switch( token ){
+        case RBRACE_N :
+            depth--;
+            break;
+    }
+
+    generate_space_before(token);
+    generate_indent();
     fprintf(fp, "%s", token_to_str[token]);
 
     switch( token ){
@@ -64,10 +82,72 @@ void generate(int token)
             fprintf(fp, "%s", str);
             break;
         case LBRACE_N :
+            depth++;
         case RBRACE_N :
+        case COLON_N :
         case SEMI_N :
             fprintf(fp, "\n");
+            fs.is_gen_indent = True;
             break;
+    }
+
+    generate_space_after(token);
+
+    return ;
+}
+
+
+static void generate_space_before(int token)
+{
+    switch( token ){
+        case ASSIGN_N :
+        case EQUAL_N :
+        case NOTEQ_N :
+        case LE_N :
+        case LEEQ_N :
+        case RE_N :
+        case REEQ_N :
+        case AND_N :
+        case OR_N :
+            fprintf(fp, " ");
+            break;
+    }
+
+    return ;
+}
+
+
+static void generate_space_after(int token)
+{
+    switch( token ){
+        case GOTO_N :
+        case INT_N :
+        case ASSIGN_N :
+        case EQUAL_N :
+        case LE_N :
+        case LEEQ_N :
+        case RE_N :
+        case REEQ_N :
+        case AND_N :
+        case OR_N :
+        case COMMA_N :
+            fprintf(fp, " ");
+            break;
+    }
+
+    return ;
+}
+
+
+static void generate_indent(void)
+{
+    int i;
+
+    if( fs.is_gen_indent ){
+        for( i = 0; i < depth; i++ ){
+            fprintf(fp, "    ");
+        }
+        fs.is_gen_indent = False;
     }
 
     return ;

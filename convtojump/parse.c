@@ -248,11 +248,13 @@ static int is_label(void)
     if( token != NAME_N ){
         return False;
     }
-    // paste_label();
     get_token();
 
     // ':'
-    if( is_token_(COLON_N) ){
+    if( token == COLON_N ){
+        generate(prevtoken);  // generate labelname
+        generate(token);  // generate ':'
+        get_token();
         paste_label(prevstr);
         return True;
     }
@@ -704,7 +706,7 @@ static void atom_numerical_expression(void)
 static void exprcat(char *expr, char *l, char *o, char *r)
 {
     // str <- o(l,r)
-    snprintf(expr, MAXSTRLEN, "%s(%s,%s)", o, l, r);
+    snprintf(expr, MAXSTRLEN, "%s(%s, %s)", o, l, r);
 
     // initialize
     memset(l, '\0', MAXSTRLEN);
