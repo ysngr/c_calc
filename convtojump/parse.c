@@ -37,6 +37,7 @@ static void calc_main(void);
 static void statements(void);
 static int is_label(void);
 static int is_statement(void);
+static int is_single_statement(void);
 static int is_val_update_statement(void);
 static int is_if_statement(void);
 static int is_while_statement(void);
@@ -301,6 +302,16 @@ static int is_statement(void)
 }
 
 
+static int is_single_statement(void)
+{
+    generate_ln_indent();
+    is_statement();
+    generate_nl_outdent();
+
+    return True;
+}
+
+
 static int is_val_update_statement(void)
 {
     // var
@@ -349,7 +360,7 @@ static int is_if_statement(void)
         statements();
         is_token_or_err(RBRACE_N);
     }else{
-        is_statement();
+        is_single_statement();
     }
 
     // 'else'
@@ -359,7 +370,7 @@ static int is_if_statement(void)
             statements();
             is_token_or_err(RBRACE_N);
         }else{
-            is_statement();
+            is_single_statement();
         }
     }
 
@@ -384,7 +395,7 @@ static int is_while_statement(void)
         statements();
         is_token_or_err(RBRACE_N);
     }else{
-        is_statement();
+        is_single_statement();
     }
 
     return True;
@@ -408,7 +419,7 @@ static int is_loop_statement(void)
         statements();
         is_token_or_err(RBRACE_N);
     }else{
-        is_statement();
+        is_single_statement();
     }
 
     return True;
