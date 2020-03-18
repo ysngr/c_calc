@@ -18,7 +18,7 @@ static char token_to_str[TOKEN_NUM][MAXSTRLEN] = {
     "{"     , "}"     , ","     , ":"     , ";"
 };
 
-static void separate_extension(char*, char*, char*);
+static void name_outputfile(char*, char*);
 static void generate_space_before(int);
 static void generate_space_after(int);
 static void generate_indent(void);
@@ -27,12 +27,9 @@ static void generate_indent(void);
 
 void initialize_generator(char *inputfile)
 {
-    char inputfiledelext[MAXSTRLEN];
-    char extension[MAXSTRLEN];
     char outputfile[MAXSTRLEN];
 
-    separate_extension(inputfile, inputfiledelext, extension);
-    snprintf(outputfile, MAXSTRLEN, "%s_jump%s", inputfiledelext, extension);
+    name_outputfile(outputfile, inputfile);
 
     if( (fp = fopen(outputfile, "w")) == NULL ){
         printf("Output file cannot be generated.\n");
@@ -46,19 +43,23 @@ void initialize_generator(char *inputfile)
 }
 
 
-static void separate_extension(char *file, char *name, char *ext)
+static void name_outputfile(char *outputfile, char *inputfile)
 {
     int i, j;
+    char inputfiledelext[MAXSTRLEN];
+    char extension[MAXSTRLEN];
 
-    for( i = 0; file[i] != '.'; i++ ){
-        name[i] = file[i];
+    for( i = 0; inputfile[i] != '.'; i++ ){
+        inputfiledelext[i] = inputfile[i];
     }
-    name[i] = '\0';
+    inputfiledelext[i] = '\0';
 
-    for( j = 0; file[i] != '\0'; i++, j++ ){
-        ext[j] = file[i];
+    for( j = 0; inputfile[i] != '\0'; i++, j++ ){
+        extension[j] = inputfile[i];
     }
-    ext[j] = '\0';
+    extension[j] = '\0';
+
+    snprintf(outputfile, MAXSTRLEN, "%s_jump%s", inputfiledelext, extension);
 
     return ;
 }
@@ -159,7 +160,6 @@ void generate_ln_indent(void)
     fprintf(fp, "\n");
     depth++;
     fs.is_gen_indent = True;
-    // generate_indent();
 
     return ;
 }

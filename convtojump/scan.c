@@ -1,7 +1,7 @@
 /* scan.c */
 #include "convtojump.h"
 
-#define PRINTPROG
+// #define PRINTPROG
 #define KEYWORDNUM 7
 
 
