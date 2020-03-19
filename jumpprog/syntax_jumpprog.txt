@@ -6,7 +6,7 @@ var -> 'v'Num
 var-decl -> 'int' var-names ';'
 calc-main -> stats
 
-stats -> { label stat } return-stat
+stats -> { label stat } label return-stat
 stat -> val-update-stat | if-stat | goto-stat
 label -> label-name ':'
 label-name -> 'L'Num
