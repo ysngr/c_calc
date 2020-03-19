@@ -2,7 +2,7 @@
 #include "jumpprog.h"
 
 #define PRINTPROG
-#define KEYWORDNUM 7
+#define KEYWORDNUM 4
 
 
 struct key{
@@ -11,9 +11,6 @@ struct key{
 };
 static struct key ks[KEYWORDNUM] = {
     {IF_N    , "if"    },
-    {ELSE_N  , "else"  },
-    {WHILE_N , "while" },
-    {LOOP_N  , "loop"  },
     {RETURN_N, "return"},
     {GOTO_N  , "goto"  },
     {INT_N   , "int"   }
@@ -25,13 +22,8 @@ int num;
 
 static FILE *fp;
 static char c;
-static struct flas{
-    int is_ungetc_exec;
-} fs;
 
-static void init_flag(void);
 static void scanc(void);
-static int Ungetc(int, FILE*);
 static int is_invalid_char(void);
 static int str_to_tokennum(void);
 
@@ -44,16 +36,7 @@ void init_scan(const char *filename)
         exit(EXIT_FAILURE);
     }
 
-    init_flag();
     scanc();
-
-    return ;
-}
-
-
-static void init_flag(void)
-{
-    fs.is_ungetc_exec = False;
 
     return ;
 }
@@ -64,9 +47,7 @@ static void scanc(void)
     c = fgetc(fp);
 
     #ifdef PRINTPROG
-        if( fs.is_ungetc_exec ){
-            fs.is_ungetc_exec = False;
-        }else if( c == EOF ){
+        if( c == EOF ){
             printf("\n");
         }else{
             printf("%c", c);
@@ -74,15 +55,6 @@ static void scanc(void)
     #endif
 
     return ;
-}
-
-
-static int Ungetc(int c, FILE *stream)
-{
-    ungetc(c, stream);
-    fs.is_ungetc_exec = True;
-
-    return (unsigned int)c;
 }
 
 
@@ -134,8 +106,7 @@ int scan(void)
                 if( c == '+' ){
                     token = INC_N;
                 }else{
-                    token = PLUS_N;
-                    Ungetc(c, fp);
+                    token = UNKNOWN;
                 }
                 break;
             case '-' :
@@ -145,16 +116,12 @@ int scan(void)
                     if( c == '\'' ){
                         token = CDEC_N;
                     }else{
-                        token = DEC_N;
-                        Ungetc(c, fp);
+                        token = UNKNOWN;
                     }
-                    break;
                 }else{
-                    token = MINUS_N;
-                    Ungetc(c, fp);
+                    token = UNKNOWN;
                 }
                 break;
-            case '*' : token = MUL_N; break;
             case '/' :
                 scanc();
                 if( c == '*' ){  // comment
@@ -171,63 +138,11 @@ int scan(void)
                     scanc();
                     goto BEGIN_SCAN;
                 }else {
-                    token = DIV_N;
-                    Ungetc(c, fp);
-                }
-                break;
-            case '%' : token = MOD_N; break;
-            case '=' :
-                scanc();
-                if( c == '=' ){
-                    token = EQUAL_N;
-                }else{
-                    token = ASSIGN_N;
-                    Ungetc(c, fp);
-                }
-                break;
-            case '!' :
-                scanc();
-                if( c == '=' ){
-                    token = NOTEQ_N;
-                }else{
-                    token = NOT_N;
-                    Ungetc(c, fp);
-                }
-                break;
-            case '<' :
-                scanc();
-                if( c == '=' ){
-                    token = LEEQ_N;
-                }else{
-                    token = LE_N;
-                    Ungetc(c, fp);
-                }
-                break;
-            case '>' :
-                scanc();
-                if( c == '=' ){
-                    token = REEQ_N;
-                }else{
-                    token = RE_N;
-                    Ungetc(c, fp);
-                }
-                break;
-            case '&' :
-                scanc();
-                if( c == '&' ){
-                    token = AND_N;
-                }else{
                     token = UNKNOWN;
                 }
                 break;
-            case '|' :
-                scanc();
-                if( c == '|' ){
-                    token = OR_N;
-                }else{
-                    token = UNKNOWN;
-                }
-                break;
+            case '=' : token = ASSIGN_N; break;
+            case '>' : token = RE_N; break;
             case '(' : token = LPAREN_N; break;
             case ')' : token = RPAREN_N; break;
             case '{' : token = LBRACE_N; break;

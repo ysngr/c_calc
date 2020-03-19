@@ -1,0 +1,19 @@
+jump-prog -> prog-name formal-params '{' var-decl calc-main '}'
+prog-name -> Name
+formal-params -> '(' var-names ')'
+var-names -> var { ',' var }
+var -> 'v'Num
+var-decl -> 'int' var-names ';'
+calc-main -> stats
+
+stats -> { label stat } label return-stat
+stat -> val-update-stat | if-stat | goto-stat
+label -> label-name ':'
+label-name -> 'L'Num
+return-stat -> 'return' '(' 'v1' ')' ';'
+val-update-stat -> assign-stat | incr-stat | cond-decr-stat
+assign-stat -> var '=' (Num | var) ';'
+incr-stat -> var '++' ';'
+cond-decr-stat -> var '--'' ';'
+if-stat -> 'if' '(' var '>' '0' ')' goto-stat
+goto-stat -> 'goto' label-name ';'
