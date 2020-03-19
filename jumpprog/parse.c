@@ -25,6 +25,7 @@ static void variable_declaration(void);
 static void label(void);
 static void labelname(void);
 
+static void program_name(void);
 static void formal_parameters(void);
 static void calc_main(void);
 static void statements(void);
@@ -104,10 +105,12 @@ void parse(void)
         init_fprog_list();
 
         // prog-name formal-params '{' var-decl calc-main '}'
-        is_token_or_err(NAME_N);
+        program_name();
+        fs.is_var_def = True;
         formal_parameters();
         is_token_or_err(LBRACE_N);
         variable_declaration();
+        fs.is_var_def = False;
         calc_main();
         is_token_or_err(RBRACE_N);
 
@@ -216,6 +219,15 @@ static void labelname(void)
 }
 
 
+static void program_name(void)
+{
+    is_token_or_err(NAME_N);
+    define_variable();
+
+    return ;
+}
+
+
 static void formal_parameters(void)
 {
     // '(' var-names ')'
@@ -241,7 +253,6 @@ static void variable_declaration(void)
 
 static void calc_main(void)
 {
-    fs.is_var_def = False;
     statements();
 
     return ;
