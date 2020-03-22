@@ -4,7 +4,6 @@
 
 static int token;
 static char expr_r[MAXSTRLEN];
-static int labelcounter;
 
 static struct buffer{
     int nexttoken;
@@ -20,6 +19,11 @@ static struct flags{
     int is_argument;
 } fs;
 
+static struct counter{
+    int v;
+    int l;
+} cnt;
+
 
 static void get_token(void);
 static void get_token_from_buf(void);
@@ -29,6 +33,7 @@ static void error(void);
 
 static void initialize_parse(void);
 static void initialize_flag(void);
+static void initialize_counter(void);
 
 static void formal_parameters(void);
 static void variable_names(void);
@@ -59,6 +64,7 @@ static void numerical_term(void);
 static void atom_numerical_expression(void);
 
 static void exprcat(char*, char*, char*, char*);
+static void create_newvariable(char*, int);
 static void create_newlabel(char*, int);
 
 
@@ -158,13 +164,22 @@ static void initialize_flag(void)
 }
 
 
+static void initialize_counter(void)
+{
+    cnt.v = 0;
+    cnt.l = 0;
+
+    return ;
+}
+
+
 void parse(void)
 {
     initialize_parse();
 
     do{
-        labelcounter = 100;
         initialize_flag();
+        initialize_counter();
         initialize_fprog_list();
 
         // func-name formal-params '{' var-decl calc-main '}'
@@ -383,8 +398,7 @@ static int is_if_statement(void)
 
 static int is_while_statement(void)
 {
-    char label[MAXSTRLEN], ref_label[MAXSTRLEN];
-
+    char label[MAXSTRLEN];
 
     // 'while'
     fs.is_generate_token = False;
@@ -393,8 +407,8 @@ static int is_while_statement(void)
         return False;
     }
     create_newlabel(label, MAXSTRLEN);
-    snprintf(ref_label, MAXSTRLEN, "%s:\n", label);
-    generate_str(ref_label);
+    generate_deplabel(label);
+    reference_label(label);
     generate(IF_N);
     fs.is_generate_token = True;
 
@@ -421,22 +435,51 @@ static int is_while_statement(void)
 
 static int is_loop_statement(void)
 {
+    char var[MAXSTRLEN], label[MAXSTRLEN];
+
     // 'loop'
+    fs.is_generate_token = False;
     if( is_token_(LOOP_N) == False ){
+        fs.is_generate_token = True;
         return False;
     }
 
     // '(' num-expr ')'
     is_token_or_err(LPAREN_N);
+    create_newvariable(var, MAXSTRLEN);
+    generate_str(var);
+    generate(ASSIGN_N);
+    fs.is_generate_token = True;
     numerical_expression();
+    fs.is_generate_token = False;
+    generate(SEMI_N);
+    create_newlabel(label, MAXSTRLEN);
+    generate_deplabel(label);
     is_token_or_err(RPAREN_N);
+    generate(IF_N);
+    generate(LPAREN_N);
+    generate_str(var);
+    generate(RE_N);
+    generate_str("0");
+    generate(RPAREN_N);
+    fs.is_generate_token = True;
 
     // '{' stats '}' | stat
     if( is_token_(LBRACE_N) ){
         statements();
+        generate_str(var);
+        generate(DEC_N);
+        generate(SEMI_N);
+        generate_goto(label);
         is_token_or_err(RBRACE_N);
     }else{
-        is_single_statement();
+        generate(LBRACE_N);
+        is_statement();
+        generate_str(var);
+        generate(DEC_N);
+        generate(SEMI_N);
+        generate_goto(label);
+        generate(RBRACE_N);
     }
 
     return True;
@@ -748,9 +791,17 @@ static void exprcat(char *expr, char *l, char *o, char *r)
 }
 
 
+static void create_newvariable(char *var, int size)
+{
+    snprintf(var, size, "_v%d", cnt.v++);
+
+    return ;
+}
+
+
 static void create_newlabel(char *label, int size)
 {
-    snprintf(label, size, "L%d", labelcounter++);
+    snprintf(label, size, "_L%d", cnt.l++);
 
     return ;
 }

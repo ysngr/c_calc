@@ -73,6 +73,7 @@ void check_label_link(void);
 void initialize_generator(char*);
 void generate(int);
 void generate_str(char*);
+void generate_deplabel(char*);
 void generate_goto(char*);
 void generate_ln_indent(void);
 void generate_nl_outdent(void);

@@ -185,12 +185,22 @@ void generate_str(char *s)
 }
 
 
+void generate_deplabel(char *label)
+{
+    generate_indent();
+    generate_str(label);
+    generate(COLON_N);
+
+    return ;
+}
+
+
 void generate_goto(char *label)
 {
     generate(GOTO_N);
     generate_str(label);
     generate(SEMI_N);
-    
+
     return ;
 }
 
