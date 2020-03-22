@@ -185,6 +185,15 @@ void generate_str(char *s)
 }
 
 
+void generate_indent_str(char *s)
+{
+    generate_indent();
+    fprintf(fp, "%s", s);
+
+    return ;
+}
+
+
 void generate_deplabel(char *label)
 {
     generate_indent();

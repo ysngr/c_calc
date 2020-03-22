@@ -447,7 +447,7 @@ static int is_loop_statement(void)
     // '(' num-expr ')'
     is_token_or_err(LPAREN_N);
     create_newvariable(var, MAXSTRLEN);
-    generate_str(var);
+    generate_indent_str(var);
     generate(ASSIGN_N);
     fs.is_generate_token = True;
     numerical_expression();
@@ -467,7 +467,7 @@ static int is_loop_statement(void)
     // '{' stats '}' | stat
     if( is_token_(LBRACE_N) ){
         statements();
-        generate_str(var);
+        generate_indent_str(var);
         generate(DEC_N);
         generate(SEMI_N);
         generate_goto(label);
@@ -475,7 +475,7 @@ static int is_loop_statement(void)
     }else{
         generate(LBRACE_N);
         is_statement();
-        generate_str(var);
+        generate_indent_str(var);
         generate(DEC_N);
         generate(SEMI_N);
         generate_goto(label);
