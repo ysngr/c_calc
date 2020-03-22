@@ -177,10 +177,20 @@ void generate_nl_outdent(void)
 }
 
 
-void generate_expr(char *expr)
+void generate_str(char *s)
 {
-    fprintf(fp, "%s", expr);
+    fprintf(fp, "%s", s);
 
+    return ;
+}
+
+
+void generate_goto(char *label)
+{
+    generate(GOTO_N);
+    generate_str(label);
+    generate(SEMI_N);
+    
     return ;
 }
 

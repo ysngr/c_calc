@@ -4,6 +4,7 @@
 
 static int token;
 static char expr_r[MAXSTRLEN];
+static int labelcounter;
 
 static struct buffer{
     int nexttoken;
@@ -58,6 +59,7 @@ static void numerical_term(void);
 static void atom_numerical_expression(void);
 
 static void exprcat(char*, char*, char*, char*);
+static void create_newlabel(char*, int);
 
 
 
@@ -95,7 +97,7 @@ static int is_token_(int cmptoken)
     if( cmptoken == NAME_N ){
         // label
         if( fs.is_label_dep ){
-            generate_label();
+            define_label();
             fs.is_label_dep = False;
         }
         // variable, function
@@ -161,6 +163,7 @@ void parse(void)
     initialize_parse();
 
     do{
+        labelcounter = 100;
         initialize_flag();
         initialize_fprog_list();
 
@@ -258,7 +261,7 @@ static int is_label(void)
         generate(prevtoken);  // generate labelname
         generate(token);  // generate ':'
         get_token();
-        paste_label(prevstr);
+        reference_label(prevstr);
         return True;
     }
 
@@ -380,10 +383,20 @@ static int is_if_statement(void)
 
 static int is_while_statement(void)
 {
+    char label[MAXSTRLEN], ref_label[MAXSTRLEN];
+
+
     // 'while'
+    fs.is_generate_token = False;
     if( is_token_(WHILE_N) == False ){
+        fs.is_generate_token = True;
         return False;
     }
+    create_newlabel(label, MAXSTRLEN);
+    snprintf(ref_label, MAXSTRLEN, "%s:\n", label);
+    generate_str(ref_label);
+    generate(IF_N);
+    fs.is_generate_token = True;
 
     // '(' cond-expr ')'
     is_token_or_err(LPAREN_N);
@@ -393,9 +406,13 @@ static int is_while_statement(void)
     // '{' stats '}' | stat
     if( is_token_(LBRACE_N) ){
         statements();
+        generate_goto(label);
         is_token_or_err(RBRACE_N);
     }else{
-        is_single_statement();
+        generate(LBRACE_N);
+        is_statement();
+        generate_goto(label);
+        generate(RBRACE_N);
     }
 
     return True;
@@ -583,7 +600,7 @@ static void numerical_expression(void)
     if( fs.is_argument ){
         strcpy(expr_r, expr_l);
     }else{
-        generate_expr(expr_l);
+        generate_str(expr_l);
         fs.is_generate_token = True;
     }
 
@@ -726,6 +743,14 @@ static void exprcat(char *expr, char *l, char *o, char *r)
     memset(l, '\0', MAXSTRLEN);
     memset(o, '\0', MAXSTRLEN);
     memset(r, '\0', MAXSTRLEN);
+
+    return ;
+}
+
+
+static void create_newlabel(char *label, int size)
+{
+    snprintf(label, size, "L%d", labelcounter++);
 
     return ;
 }

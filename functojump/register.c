@@ -171,7 +171,7 @@ static int is_variable_declared(void)
 }
 
 
-void generate_label(void)
+void define_label(void)
 {
     int len_str = strlen(str) + 1;
     struct labellist *nl;
@@ -201,7 +201,7 @@ void generate_label(void)
 }
 
 
-void paste_label(char *label)
+void reference_label(char *label)
 {
     int len_str = strlen(label) + 1;
     struct labellist *nl;

@@ -65,14 +65,15 @@ void initialize_register(void);
 void initialize_fprog_list(void);
 void define_variable(void);
 void reference_variable(void);
-void generate_label(void);
-void paste_label(char*);
+void define_label(void);
+void reference_label(char*);
 void check_label_link(void);
 
 /* generate.c */
 void initialize_generator(char*);
 void generate(int);
-void generate_expr(char*);
+void generate_str(char*);
+void generate_goto(char*);
 void generate_ln_indent(void);
 void generate_nl_outdent(void);
 void finalize_generator(void);
