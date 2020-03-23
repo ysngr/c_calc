@@ -23,7 +23,7 @@ empty-stat ->  // do nothing
 cond-expr -> simple-cond-expr { '||' simple-cond-expr }
 simple-cond-expr -> cond-term { '&&' cond-term }
 cond-term -> '(' cond-expr ')' | '!' cond-term | atom-cond-expr
-atom-cond-expr -> num-expr rel-ope num-expr { rel-ope num-expr }
+atom-cond-expr -> num-expr rel-ope num-expr
 rel-ope -> '==' | '!=' | '<' | '<=' | '>' | '>='
 num-expr -> ['-'] simple-num-expr { add-ope simple-num-ope }
 add-ope -> '+' | '-'
