@@ -418,13 +418,16 @@ static int is_while_statement(void)
     }
     create_newlabel(label, MAXSTRLEN);
     generate_arrlabel(label);
-    generate(IF_N);
-    fs.is_generate_token = True;
 
     // '(' cond-expr ')'
     is_token_or_err(LPAREN_N);
     conditional_expression();
     is_token_or_err(RPAREN_N);
+    generate(IF_N);
+    generate(LPAREN_N);
+    generate_str(cond_expr);
+    generate(RPAREN_N);
+    fs.is_generate_token = True;
 
     // '{' stats '}' | stat
     if( is_token_(LBRACE_N) ){
