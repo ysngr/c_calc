@@ -122,12 +122,6 @@ void define_variable_explicitly(char *var)
     int len_var = strlen(var) + 1;
     struct varlist *nv;
 
-    // variable name
-    if( is_variable_declared() ){
-        printf("\nVariable \"%s\" is duplicated.\n", str);
-        exit(EXIT_FAILURE);
-    }
-
     // generate new node
     nv = (struct varlist*)Malloc(sizeof(struct varlist));
     nv->varname = (char*)Malloc(sizeof(char)*len_var);

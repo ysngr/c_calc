@@ -534,10 +534,22 @@ static int is_goto_statement(void)
 
 static void conditional_expression(void)
 {
+    int is_multiple_simple_cond_expr = False;
+    char expr[MAXSTRLEN];
+
     // simple-cond-expr { '||' simple-cond_expr }
     simple_conditional_expression();
+    strcpy(expr, cond_expr);
     while( is_token_(OR_N) ){
+        is_multiple_simple_cond_expr = True;
+        strcat(expr, ") || (");
         simple_conditional_expression();
+        strcat(expr, cond_expr);
+    }
+    if( is_multiple_simple_cond_expr ){
+        snprintf(cond_expr, MAXSTRLEN, "(%s)", expr);
+    }else{
+        strcpy(cond_expr, expr);
     }
 
     return ;
@@ -546,10 +558,22 @@ static void conditional_expression(void)
 
 static void simple_conditional_expression(void)
 {
+    int is_muptiple_cond_expr = False;
+    char expr[MAXSTRLEN];
+
     // cond-term { '&&' cond-term }
     conditional_term();
+    strcpy(expr, cond_expr);
     while( is_token_(AND_N) ){
+        is_muptiple_cond_expr = True;
+        strcat(expr, ") && (");
         conditional_term();
+        strcat(expr, cond_expr);
+    }
+    if( is_muptiple_cond_expr ){
+        snprintf(cond_expr, MAXSTRLEN, "(%s)", expr);
+    }else{
+        strcpy(cond_expr, expr);
     }
 
     return ;
