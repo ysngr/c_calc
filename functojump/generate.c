@@ -194,10 +194,11 @@ void generate_indent_str(char *s)
 }
 
 
-void generate_deplabel(char *label)
+void generate_arrlabel(char *label)
 {
     generate_indent();
     generate_str(label);
+    reference_label(label);
     generate(COLON_N);
 
     return ;
@@ -208,6 +209,7 @@ void generate_goto(char *label)
 {
     generate(GOTO_N);
     generate_str(label);
+    define_label_explicitly(label);
     generate(SEMI_N);
 
     return ;

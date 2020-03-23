@@ -193,7 +193,7 @@ void parse(void)
         check_label_link();
     }while( is_token_(END_OF_FILE) == False );
 
-    // print_list();  // for debug
+    print_list();  // for debug
 
     return ;
 }
@@ -407,8 +407,7 @@ static int is_while_statement(void)
         return False;
     }
     create_newlabel(label, MAXSTRLEN);
-    generate_deplabel(label);
-    reference_label(label);
+    generate_arrlabel(label);
     generate(IF_N);
     fs.is_generate_token = True;
 
@@ -448,13 +447,14 @@ static int is_loop_statement(void)
     is_token_or_err(LPAREN_N);
     create_newvariable(var, MAXSTRLEN);
     generate_indent_str(var);
+    define_variable_explicitly(var);
     generate(ASSIGN_N);
     fs.is_generate_token = True;
     numerical_expression();
     fs.is_generate_token = False;
     generate(SEMI_N);
     create_newlabel(label, MAXSTRLEN);
-    generate_deplabel(label);
+    generate_arrlabel(label);
     is_token_or_err(RPAREN_N);
     generate(IF_N);
     generate(LPAREN_N);
