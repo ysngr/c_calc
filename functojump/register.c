@@ -117,6 +117,35 @@ void define_variable(void)
 }
 
 
+void define_variable_explicitly(char *var)
+{
+    int len_var = strlen(var) + 1;
+    struct varlist *nv;
+
+    // variable name
+    if( is_variable_declared() ){
+        printf("\nVariable \"%s\" is duplicated.\n", str);
+        exit(EXIT_FAILURE);
+    }
+
+    // generate new node
+    nv = (struct varlist*)Malloc(sizeof(struct varlist));
+    nv->varname = (char*)Malloc(sizeof(char)*len_var);
+    strncpy(nv->varname, var, len_var);
+    nv->nextvar = NULL;
+
+    // connect
+    if( f->vars == NULL ){  // first variable
+        f->vars = nv;
+    }else{  // otherwise
+        v->nextvar = nv;
+    }
+    v = nv;
+
+    return ;
+}
+
+
 void reference_variable(void)
 {
     if( is_variable_declared() == False ){
@@ -185,6 +214,36 @@ void define_label(void)
     nl = (struct labellist*)Malloc(sizeof(struct labellist));
     nl->labelname = (char*)Malloc(sizeof(char)*len_str);
     strncpy(nl->labelname, str, len_str);
+    nl->is_used_for_dep = True;
+    nl->is_used_for_arr = False;
+    nl->nextlabel = NULL;
+
+    // connect
+    if( f->labels == NULL ){  // first label
+        f->labels = nl;
+    }else{  // otherwise
+        l->nextlabel = nl;
+    }
+    l = nl;
+
+    return ;
+}
+
+
+void define_label_explicitly(char *label)
+{
+    int len_label = strlen(label) + 1;
+    struct labellist *nl;
+
+    if( (nl = find_label(label)) != NULL ){
+        nl->is_used_for_dep = True;
+        return ;
+    }
+
+    // generate new node
+    nl = (struct labellist*)Malloc(sizeof(struct labellist));
+    nl->labelname = (char*)Malloc(sizeof(char)*len_label);
+    strncpy(nl->labelname, label, len_label);
     nl->is_used_for_dep = True;
     nl->is_used_for_arr = False;
     nl->nextlabel = NULL;
