@@ -571,9 +571,6 @@ static void atom_conditional_expression(void)
         error();
     }
     numerical_expression();
-    while( is_relational_operator() ){
-        numerical_expression();
-    }
 
     return ;
 }
