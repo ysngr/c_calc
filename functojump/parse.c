@@ -656,12 +656,6 @@ static void atom_conditional_expression(void)
             generate_indent_str(var1);
             define_variable_explicitly(var1);
             generate(ASSIGN_N);
-            // if( ope == LEEQ_N || ope == REEQ_N ){
-            //     generate_str("_add");
-            //     generate(LPAREN_N);
-            //     generate_str("1");
-            //     generate(COMMA_N);
-            // }
             generate_str("_sub");
             generate(LPAREN_N);
             if( ope == RE_N || ope == REEQ_N ){
@@ -676,9 +670,6 @@ static void atom_conditional_expression(void)
                 generate_str(expr1);
             }
             generate(RPAREN_N);
-            // if( ope == LEEQ_N || ope == REEQ_N ){
-            //     generate(RPAREN_N);
-            // }
             generate(SEMI_N);
             if( ope == LEEQ_N || ope == REEQ_N ){
                 generate_indent_str(var1);
