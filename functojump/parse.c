@@ -45,7 +45,6 @@ static void calc_main(void);
 static void statements(void);
 static int is_label(void);
 static int is_statement(void);
-static int is_single_statement(void);
 static int is_val_update_statement(void);
 static int is_if_statement(void);
 static int is_while_statement(void);
@@ -242,6 +241,13 @@ static void calc_main(void)
 {
     fs.is_var_def = False;
     statements();
+    
+    generate_arrlabel("_L");
+    generate(RETURN_N);
+    generate(LPAREN_N);
+    generate_str("_r");
+    generate(RPAREN_N);
+    generate(SEMI_N);
 
     return ;
 }
@@ -323,16 +329,6 @@ static int is_statement(void)
 }
 
 
-static int is_single_statement(void)
-{
-    generate_ln_indent();
-    is_statement();
-    generate_nl_outdent();
-
-    return True;
-}
-
-
 static int is_val_update_statement(void)
 {
     // var
@@ -388,7 +384,9 @@ static int is_if_statement(void)
         statements();
         is_token_or_err(RBRACE_N);
     }else{
-        is_single_statement();
+        generate(LBRACE_N);
+        is_statement();
+        generate(RBRACE_N);
     }
 
     // 'else'
@@ -398,7 +396,9 @@ static int is_if_statement(void)
             statements();
             is_token_or_err(RBRACE_N);
         }else{
-            is_single_statement();
+            generate(LBRACE_N);
+            is_statement();
+            generate(RBRACE_N);
         }
     }
 
@@ -501,16 +501,29 @@ static int is_loop_statement(void)
 
 static int is_return_statement(void)
 {
+    char var[MAXSTRLEN] = "_r";
+    char label[MAXSTRLEN] = "_L";
+
     // 'return'
+    fs.is_generate_token = False;
     if( is_token_(RETURN_N) == False ){
+        fs.is_generate_token = True;
         return False;
     }
 
     // '(' num-expr ')' ';'
     is_token_or_err(LPAREN_N);
+    generate_indent_str(var);
+    define_variable_explicitly(var);
+    generate(ASSIGN_N);
+    fs.is_generate_token = True;
     numerical_expression();
+    fs.is_generate_token = False;
+    generate(SEMI_N);
+    generate_goto(label);
     is_token_or_err(RPAREN_N);
     is_token_or_err(SEMI_N);
+    fs.is_generate_token = True;
 
     return True;
 }

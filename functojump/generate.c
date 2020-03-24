@@ -155,28 +155,6 @@ static void generate_indent(void)
 }
 
 
-void generate_ln_indent(void)
-{
-    fprintf(fp, "\n");
-    depth++;
-    fs.is_gen_indent = True;
-
-    return ;
-}
-
-
-void generate_nl_outdent(void)
-{
-    if( ! fs.is_gen_indent ){
-        fprintf(fp, "\n");
-    }
-    depth--;
-    fs.is_gen_indent = True;
-
-    return ;
-}
-
-
 void generate_str(char *s)
 {
     fprintf(fp, "%s", s);

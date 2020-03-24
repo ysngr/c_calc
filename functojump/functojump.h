@@ -78,8 +78,6 @@ void generate_str(char*);
 void generate_indent_str(char*);
 void generate_arrlabel(char*);
 void generate_goto(char*);
-void generate_ln_indent(void);
-void generate_nl_outdent(void);
 void finalize_generator(void);
 
 // debug function
