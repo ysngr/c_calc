@@ -1,27 +1,14 @@
 /* univfunc.c */
-#include <stdio.h>
-#include <stdlib.h>
-
-#define MAXSEQ 32
-#define EMPTY -1
-
-
-int pair(int, int);
-int left(int);
-int right(int);
-
-int encode(int*, int);
-void decode(int, int*);
-
-int element(int, int);
-int length(int);
-int replace(int, int, int);
-int sequence(int, int);
-
+#include "univfunc.h"
 
 
 int main(void)
 {
+    int a[3] = {0, 1, EMPTY};
+    int n;
+
+    is_code(encode(a, 3));
+
     return 0;
 }
 
@@ -168,4 +155,14 @@ int sequence(int x, int k)
     }
 
     return a;
+}
+
+
+int is_code(int n)
+{
+    if( dectoprog(n) == False ){
+        return False;
+    }
+
+    return 1/*is_jumpprog()*/;
 }
