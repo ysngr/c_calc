@@ -28,6 +28,11 @@ static struct counter{
     int l;
 } cnt;
 
+static struct arglist{
+    char *argname;
+    struct arglist *nextarg;
+} *as;
+
 
 static void get_token(void);
 static void get_token_from_buf(void);
@@ -38,6 +43,8 @@ static void error(void);
 static void initialize_parse(void);
 static void initialize_flag(void);
 static void initialize_counter(void);
+static struct arglist *initialize_arglist(void);
+static void finalize_arglist(struct arglist*);
 
 static void formal_parameters(void);
 static void variable_names(void);
@@ -65,6 +72,7 @@ static void simple_numerical_expression(void);
 static int is_multiplicative_operator(char*);
 static void numerical_term(void);
 static void atom_numerical_expression(void);
+static void register_arg(char*);
 
 static void exprcat(char*, char*, char*, char*);
 static void create_newvariable(char*, int);
@@ -174,6 +182,41 @@ static void initialize_counter(void)
 {
     cnt.v = 0;
     cnt.l = 0;
+
+    return ;
+}
+
+
+static struct arglist *initialize_arglist(void)
+{
+    struct arglist *pas;
+
+    if( as == NULL ){
+        return NULL;
+    }
+
+    pas = as;
+    as = NULL;
+
+    return pas;
+}
+
+
+static void finalize_arglist(struct arglist *pas)
+{
+    struct arglist *ap, *rm;
+
+    if( as != NULL ){
+        while( as->nextarg != NULL ){
+            for( ap = as; ap->nextarg->nextarg != NULL; ap = ap->nextarg );
+            rm = ap->nextarg;
+            ap->nextarg = NULL;
+            free(rm);
+        }
+        free(as);
+    }
+
+    as = pas;
 
     return ;
 }
@@ -878,6 +921,7 @@ static void atom_numerical_expression(void)
     char exprstr[MAXSTRLEN];
     char var[MAXSTRLEN];
     int is_func_in_arg;
+    struct arglist *pas;
 
     // var | func
     fs.is_generate_token = False;
@@ -885,6 +929,7 @@ static void atom_numerical_expression(void)
         strcpy(exprstr, str);
         // funcname ('()' | '(' num-exprs, ')')
         if( is_token_(LPAREN_N) ){  // '('
+            pas = initialize_arglist();
             is_func_in_arg = ( fs.is_argument )? True : False;
             strcat(exprstr, "(");
             // funcname()
@@ -895,10 +940,12 @@ static void atom_numerical_expression(void)
             else{
                 fs.is_argument = True;
                 numerical_expression();
+                register_arg(expr_r);
                 strcat(exprstr, expr_r);
                 while( is_token_(COMMA_N) ){  // ','
                     strcat(exprstr, ", ");
                     numerical_expression();
+                    register_arg(expr_r);
                     strcat(exprstr, expr_r);
                 }
                 is_token_or_err(RPAREN_N);  // ')'
@@ -918,6 +965,7 @@ static void atom_numerical_expression(void)
             }else{
                 strcpy(expr_r, exprstr);
             }
+            finalize_arglist(pas);
         }
         // var
         else{
@@ -937,6 +985,29 @@ static void atom_numerical_expression(void)
     // otherwise
     else{
         error();
+    }
+
+    return ;
+}
+
+
+static void register_arg(char *argname)
+{
+    int len_arg = strlen(argname) + 1;
+    struct arglist *na, *ap;
+
+    // generate new node
+    na = (struct arglist*)Malloc(sizeof(struct arglist));
+    na->argname = (char*)Malloc(sizeof(char)*len_arg);
+    strncpy(na->argname, argname, len_arg);
+    na->nextarg = NULL;
+
+    // connect
+    if( as == NULL ){  // first arg
+        as = na;
+    }else{  // otherwise
+        for( ap = as; ap->nextarg != NULL; ap = ap->nextarg );
+        ap->nextarg = na;
     }
 
     return ;

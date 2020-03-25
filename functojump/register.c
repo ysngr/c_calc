@@ -22,14 +22,13 @@ static struct fproglist{
 } *fs, *f;
 
 
-static void *Malloc(int);
 static int is_funcprog_declared(void);
 static int is_variable_declared(void);
 static struct labellist *find_label(char*);
 
 
 
-static void *Malloc(int size)
+void *Malloc(int size)
 {
     void *p;
 

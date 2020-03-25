@@ -61,6 +61,7 @@ void finalize_scan(void);
 void parse(void);
 
 /* register.c */
+void *Malloc(int);
 void initialize_register(void);
 void initialize_fprog_list(void);
 void define_variable(int);
