@@ -19,6 +19,7 @@ static struct flags{
     int is_generate_token;
     int is_argument;
     int is_generate_str;
+    int is_assign_right;
 } fs;
 
 static struct counter{
@@ -161,6 +162,7 @@ static void initialize_flag(void)
     fs.is_generate_token = True;
     fs.is_argument = False;
     fs.is_generate_str = True;
+    fs.is_assign_right = False;
 
     return ;
 }
@@ -241,7 +243,7 @@ static void calc_main(void)
 {
     fs.is_var_def = False;
     statements();
-    
+
     generate_arrlabel("_L");
     generate(RETURN_N);
     generate(LPAREN_N);
@@ -331,26 +333,40 @@ static int is_statement(void)
 
 static int is_val_update_statement(void)
 {
+    char varname[MAXSTRLEN];
+
     // var
+    fs.is_generate_token = False;
+    strcpy(varname, str);
     if( is_token_(NAME_N) == False ){
+        fs.is_generate_token = True;
         return False;
     }
 
     // assignment statement : '=' num-expr
     if( is_token_(ASSIGN_N) ){
+        fs.is_assign_right = True;
         numerical_expression();
+        fs.is_assign_right = False;
+        generate_indent_str(varname);
+        generate(ASSIGN_N);
+        generate_str(expr_r);
+        fs.is_generate_token = True;
     }
-    // increment statement : '++'
-    else if( is_token_(INC_N) ){
-        // do nothing
-    }
-    // decrement statement : '--'
-    else if( is_token_(DEC_N) ){
-        // do nothing
-    }
-    // conditional decrement statement : '--''
     else{
-        is_token_or_err(CDEC_N);
+        fs.is_generate_token = True;
+        // increment statement : '++'
+        if( is_token_(INC_N) ){
+            // do nothing
+        }
+        // decrement statement : '--'
+        else if( is_token_(DEC_N) ){
+            // do nothing
+        }
+        // conditional decrement statement : '--''
+        else{
+            is_token_or_err(CDEC_N);
+        }
     }
 
     // ';'
@@ -764,7 +780,7 @@ static void numerical_expression(void)
 
     strcpy(expr_r, expr_l);
     if( ! fs.is_argument ){
-        if( fs.is_generate_str ){
+        if( fs.is_generate_str && ! fs.is_assign_right ){
             generate_str(expr_r);
         }
         fs.is_generate_token = True;
@@ -856,18 +872,22 @@ static void numerical_term(void)
 static void atom_numerical_expression(void)
 {
     char exprstr[MAXSTRLEN];
+    char var[MAXSTRLEN];
+    int is_func_in_arg;
 
     // var | func
+    fs.is_generate_token = False;
     if( is_token_(NAME_N) ){
         strcpy(exprstr, str);
-        // '()' | '(' num-exprs, ')'
+        // funcname ('()' | '(' num-exprs, ')')
         if( is_token_(LPAREN_N) ){  // '('
+            is_func_in_arg = ( fs.is_argument )? True : False;
             strcat(exprstr, "(");
-            // func()
+            // funcname()
             if( is_token_(RPAREN_N) ){  // ')'
                 strcat(exprstr, ")");
             }
-            // func(fp, ... ,fp)
+            // funcname(fp, ... ,fp)
             else{
                 fs.is_argument = True;
                 numerical_expression();
@@ -879,15 +899,34 @@ static void atom_numerical_expression(void)
                 }
                 is_token_or_err(RPAREN_N);  // ')'
                 strcat(exprstr, ")");
-                fs.is_argument = False;
+                if( ! is_func_in_arg ){
+                    fs.is_argument = False;
+                }
+            }
+            if( fs.is_argument ){
+                create_newvariable(var, MAXSTRLEN);
+                generate_indent_str(var);
+                define_variable_explicitly(var);
+                generate(ASSIGN_N);
+                generate_str(exprstr);
+                generate(SEMI_N);
+                strcpy(expr_r, var);
+            }else{
+                strcpy(expr_r, exprstr);
             }
         }
         // var
-        strcpy(expr_r, exprstr);
+        else{
+            strcpy(expr_r, exprstr);
+        }
+        return ;
     }
 
     // int-const
-    else if( is_token_(NUM_N) ){
+    if( ! fs.is_argument ){
+        fs.is_generate_token = True;
+    }
+    if( is_token_(NUM_N) ){
         strcpy(expr_r, str);
     }
 
