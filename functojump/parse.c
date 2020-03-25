@@ -14,6 +14,7 @@ static struct buffer{
 
 static struct flags{
     int is_var_def;
+    int is_formal_parameter;
     int is_label_dep;
     int is_token_buf_exist;
     int is_generate_token;
@@ -110,7 +111,7 @@ static int is_token_(int cmptoken)
         }
         // variable, function
         else if( fs.is_var_def ){
-            define_variable();
+            define_variable(fs.is_formal_parameter);
         }else{
             reference_variable();
         }
@@ -157,6 +158,7 @@ static void initialize_parse(void)
 static void initialize_flag(void)
 {
     fs.is_var_def = True;
+    fs.is_formal_parameter = False;
     fs.is_label_dep = False;
     fs.is_token_buf_exist = False;
     fs.is_generate_token = True;
@@ -207,7 +209,9 @@ static void formal_parameters(void)
 {
     // '(' var-names ')'
     is_token_or_err(LPAREN_N);
+    fs.is_formal_parameter = True;
     variable_names();
+    fs.is_formal_parameter = False;
     is_token_or_err(RPAREN_N);
 
     return ;

@@ -63,7 +63,7 @@ void parse(void);
 /* register.c */
 void initialize_register(void);
 void initialize_fprog_list(void);
-void define_variable(void);
+void define_variable(int);
 void define_variable_explicitly(char*);
 void reference_variable(void);
 void define_label(void);

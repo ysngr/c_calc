@@ -3,6 +3,7 @@
 
 static struct varlist{
     char *varname;
+    int is_formal_parameter;
     struct varlist *nextvar;
 } *v;
 
@@ -75,7 +76,7 @@ void initialize_fprog_list(void)
 }
 
 
-void define_variable(void)
+void define_variable(int is_formal_parameter)
 {
     int len_str = strlen(str) + 1;
     struct varlist *nv;
@@ -102,6 +103,7 @@ void define_variable(void)
         nv = (struct varlist*)Malloc(sizeof(struct varlist));
         nv->varname = (char*)Malloc(sizeof(char)*len_str);
         strncpy(nv->varname, str, len_str);
+        nv->is_formal_parameter = is_formal_parameter;
         nv->nextvar = NULL;
 
         // connect
@@ -130,6 +132,7 @@ void define_variable_explicitly(char *var)
     nv = (struct varlist*)Malloc(sizeof(struct varlist));
     nv->varname = (char*)Malloc(sizeof(char)*len_var);
     strncpy(nv->varname, var, len_var);
+    nv->is_formal_parameter = False;
     nv->nextvar = NULL;
 
     // connect
@@ -332,17 +335,23 @@ void print_list(void)
     // funcprog
     for( fp = fs; fp != NULL; fp = fp->nextfprog ){
         printf("Funcprog = %s\n", fp->fprogname);
-        // var
-        printf("Vars =");
-        for( vp = fp->vars; vp != NULL; vp = vp->nextvar ){
+        // formal parameters
+        printf("Formal parameters =");
+        for( vp = fp->vars; vp != NULL && vp->is_formal_parameter; vp = vp->nextvar ){
             printf(" %s", vp->varname);
         }
         printf("\n");
-        // label
+        // vars
+        printf("Vars =");
+        for( ; vp != NULL; vp = vp->nextvar ){
+            printf(" %s", vp->varname);
+        }
+        printf("\n");
+        // labels
         printf("Labels =");
         for( lp = fp->labels; lp != NULL; lp = lp->nextlabel ){
             printf(" %s", lp->labelname);
         }
-        printf("\n");
+        printf("\n\n");
     }
 }
