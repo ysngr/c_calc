@@ -71,6 +71,11 @@ void define_label(void);
 void define_label_explicitly(char*);
 void reference_label(char*);
 void check_label_link(void);
+struct arglist *initialize_arglist(void);
+void finalize_arglist(struct arglist*);
+void register_arg(char*);
+
+
 
 /* generate.c */
 void initialize_generator(char*);
