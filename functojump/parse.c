@@ -886,6 +886,7 @@ static void atom_numerical_expression(void)
     fs.is_generate_token = False;
     if( is_token_(NAME_N) ){
         strcpy(exprstr, str);
+        strcpy(funcname, str);
         // funcname ('()' | '(' num-exprs, ')')
         if( is_token_(LPAREN_N) ){  // '('
             pas = initialize_arglist();
@@ -913,10 +914,8 @@ static void atom_numerical_expression(void)
                     fs.is_argument = False;
                 }
             }
-            //
             expand(funcname, retvar);
-            strcpy(expr_r, retvar);
-            //
+            strcpy(exprstr, retvar);
             if( fs.is_argument ){
                 create_newvariable(var, MAXSTRLEN);
                 generate_indent_str(var);

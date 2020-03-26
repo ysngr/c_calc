@@ -2,6 +2,7 @@
 #include "functojump.h"
 
 #define MAXNEWNAME 7
+#define FUNCNAME_N 36
 
 struct key{  // TODO : integrate to scan.c
     int keynum;
@@ -22,18 +23,24 @@ static char c;
 static char restr[MAXSTRLEN];
 static int renum;
 
-static fpos_t *head, *tail;
+static fpos_t *head, *scanp, *tail;
 
 static int counter;
+static char funcname[MAXSTRLEN];
+
+static struct flags{
+    int is_funcname;
+} fs;
 
 static struct sublist{
     char *origname;
     char *newname;
     struct sublist *nextsub;
 } *ss;
+// TODO : make free function
 
 
-static void initialize_expand(void);
+static void initialize_expand(char*);
 static struct sublist *find_subnode(char*);
 static void gen_subnode(char*);
 static void rescanc(void);
@@ -42,22 +49,32 @@ static int is_invalid_char(void);
 static int str_to_tokennum(void);
 static void inline_function(void);
 
+static void print_sublist(void);
 
 
-static void initialize_expand(void)
+
+static void initialize_expand(char *fname)
 {
     struct arglist *ap;
 
     fp = get_generate_fp();
+    head = (fpos_t*)Malloc(sizeof(fpos_t));
+    scanp = (fpos_t*)Malloc(sizeof(fpos_t));
+    tail = (fpos_t*)Malloc(sizeof(fpos_t));
     head = get_generate_head();
+    *scanp = *head;
     fgetpos(fp, tail);
 
     ss = NULL;
     counter = 0;
 
+    strcpy(funcname, fname);
+
     for( ap = get_args(); ap != NULL; ap = ap->nextarg ){
         gen_subnode(ap->argname);
     }
+
+    fs.is_funcname = True;
 
     rescanc();
 
@@ -111,16 +128,16 @@ static void gen_subnode(char *name)
 
 void expand(char *funcname, char *retvar)
 {
-    initialize_expand();
+    initialize_expand(funcname);
 
-    fsetpos(fp, head);
-
-    do{
-        rescan();
-    }while( strcmp(funcname, restr) != 0 );
+    while( rescan() != FUNCNAME_N );
 
     inline_function();
     strcpy(retvar, restr);
+
+    // finalize_expand();  // TODO : make finalize function
+
+    print_sublist();  // for debug
 
     return ;
 }
@@ -128,9 +145,9 @@ void expand(char *funcname, char *retvar)
 
 static void rescanc(void)
 {
-    fsetpos(fp, head);
+    fsetpos(fp, scanp);
     c = fgetc(fp);
-    fgetpos(fp, head);
+    fgetpos(fp, scanp);
 
     return ;
 }
@@ -140,6 +157,7 @@ static int rescan(void)
 {
     int i;
     int token;
+    struct sublist *s;
 
     while( is_invalid_char() ){
         rescanc();
@@ -154,7 +172,11 @@ static int rescan(void)
         restr[i] = '\0';
         if( (token = str_to_tokennum()) == NAME_N ){
             gen_subnode(restr);
-            strcpy(restr, find_subnode(restr)->newname);
+            s = find_subnode(restr);
+            strcpy(restr, s->newname);
+            if( strcmp(funcname, s->origname) == 0 ){
+                token = FUNCNAME_N;
+            }
         }
     }
 
@@ -229,8 +251,6 @@ static int rescan(void)
         }
         rescanc();
     }
-    // printf("[debug:token=%d]\n", token);///debug
-    // if( token != UNKNOWN ) printf("[debug:token=%d]\n", token);///debug
 
     return token;
 }
@@ -283,6 +303,22 @@ static void inline_function(void)
     rescan();  // store retvar to restr
     fsetpos(fp, tail);
     strcpy(str, strreg);  // restore str
+
+    return ;
+}
+
+
+
+// debug function
+static void print_sublist(void)
+{
+    struct sublist *sp;
+
+    printf("Sublist =");
+    for( sp = ss; sp != NULL; sp = sp->nextsub ){
+        printf(" [%s->%s]", sp->origname, sp->newname);
+    }
+    printf("\n");
 
     return ;
 }

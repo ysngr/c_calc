@@ -3,7 +3,7 @@
 
 
 static FILE *fp;
-static fpos_t *head;
+static fpos_t head;
 static char outputfile[MAXSTRLEN];
 static int depth;
 
@@ -36,7 +36,7 @@ void initialize_generator(char *inputfile)
         printf("Output file cannot be generated.\n");
         exit(EXIT_FAILURE);
     }
-    fgetpos(fp, head);
+    fgetpos(fp, &head);
 
     depth = 0;
     fs.is_gen_indent = False;
@@ -53,7 +53,7 @@ FILE *get_generate_fp(void)
 
 fpos_t *get_generate_head(void)
 {
-    return head;
+    return &head;
 }
 
 
