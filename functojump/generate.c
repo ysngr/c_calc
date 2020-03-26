@@ -51,9 +51,9 @@ FILE *get_generate_fp(void)
 }
 
 
-fpos_t *get_generate_head(void)
+fpos_t get_generate_head(void)
 {
-    return &head;
+    return head;
 }
 
 

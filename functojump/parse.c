@@ -359,6 +359,7 @@ static int is_val_update_statement(void)
     }
     else{
         fs.is_generate_token = True;
+        generate_indent_str(varname);
         // increment statement : '++'
         if( is_token_(INC_N) ){
             // do nothing
@@ -798,7 +799,7 @@ static int is_additive_operator(char *expr_o)
 {
     // '+'
     if( is_token_(PLUS_N) ){
-        strcpy(expr_o, "_add");
+        strcpy(expr_o, "_add");  // TODO expansion _add function
         return True;
     }
     // '-'
@@ -882,8 +883,9 @@ static void atom_numerical_expression(void)
     struct arglist *pas;
     char retvar[MAXSTRLEN];
 
-    // var | func
     fs.is_generate_token = False;
+
+    // var | func
     if( is_token_(NAME_N) ){
         strcpy(exprstr, str);
         strcpy(funcname, str);
@@ -937,9 +939,6 @@ static void atom_numerical_expression(void)
     }
 
     // int-const
-    if( ! fs.is_argument ){
-        fs.is_generate_token = True;
-    }
     if( is_token_(NUM_N) ){
         strcpy(expr_r, str);
     }

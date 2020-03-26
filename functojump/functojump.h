@@ -83,7 +83,7 @@ struct arglist* get_args(void);
 /* generate.c */
 void initialize_generator(char*);
 FILE *get_generate_fp(void);
-fpos_t *get_generate_head(void);
+fpos_t get_generate_head(void);
 void generate(int);
 void generate_str(char*);
 void generate_indent_str(char*);
