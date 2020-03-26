@@ -21,10 +21,7 @@ static struct fproglist{
     struct fproglist *nextfprog;
 } *fs, *f;
 
-static struct arglist{
-    char *argname;
-    struct arglist *nextarg;
-} *as;
+static struct arglist *as;
 
 
 static int is_funcprog_declared(void);
@@ -385,6 +382,11 @@ void register_arg(char *argname)
     return ;
 }
 
+
+struct arglist *get_args(void)
+{
+    return as;
+}
 
 
 // debug function

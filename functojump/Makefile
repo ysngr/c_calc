@@ -1,6 +1,6 @@
 # Makefile
 
-OBJS = functojump.h functojump.o scan.o parse.o register.o generate.o
+OBJS = functojump.h functojump.o scan.o parse.o register.o generate.o expand.o
 
 functojump : ${OBJS}
 	gcc -o $@ ${OBJS} -Wall

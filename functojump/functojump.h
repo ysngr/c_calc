@@ -61,6 +61,10 @@ void finalize_scan(void);
 void parse(void);
 
 /* register.c */
+struct arglist{
+    char *argname;
+    struct arglist *nextarg;
+};
 void *Malloc(int);
 void initialize_register(void);
 void initialize_fprog_list(void);
@@ -74,17 +78,22 @@ void check_label_link(void);
 struct arglist *initialize_arglist(void);
 void finalize_arglist(struct arglist*);
 void register_arg(char*);
-
-
+struct arglist* get_args(void);
 
 /* generate.c */
 void initialize_generator(char*);
+FILE *get_generate_fp(void);
+fpos_t *get_generate_head(void);
 void generate(int);
 void generate_str(char*);
 void generate_indent_str(char*);
 void generate_arrlabel(char*);
 void generate_goto(char*);
 void finalize_generator(void);
+
+/* expand.c */
+void expand(char*, char*);
+
 
 // debug function
 void print_list(void);
