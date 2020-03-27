@@ -349,6 +349,7 @@ void finalize_arglist(struct arglist *pas)
             for( ap = as; ap->nextarg->nextarg != NULL; ap = ap->nextarg );
             rm = ap->nextarg;
             ap->nextarg = NULL;
+            free(rm->argname);
             free(rm);
         }
         free(as);

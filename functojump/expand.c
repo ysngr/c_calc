@@ -9,11 +9,16 @@ static FILE *fp;
 static fpos_t head, scanp, tail;
 
 static char funcname[MAXSTRLEN];
-static int counter = 0;
 
 static char c;
 static char restr[MAXSTRLEN];
 static int renum;
+
+static struct flags{
+    int is_var_def;
+    int is_label_dep;
+    int is_rescan_buf_exist;
+} fs;
 
 static struct sublist{
     char *origname;
@@ -21,8 +26,15 @@ static struct sublist{
     struct sublist *nextsub;
 } *ss;
 
+static struct buffer{
+    int nexttoken;
+    int nextnum;
+    char nextstr[MAXSTRLEN];
+} rsbuf;
+
 
 static void initialize_expand(char*);
+static void initialize_flag(void);
 static void initialize_sublist(void);
 static struct sublist *find_subnode(char*);
 static void gen_subnode(char*);
@@ -44,9 +56,20 @@ static void initialize_expand(char *fname)
 
     strcpy(funcname, fname);
 
+    initialize_flag();
     initialize_sublist();
 
     rescanc();
+
+    return ;
+}
+
+
+static void initialize_flag(void)
+{
+    fs.is_var_def = True;
+    fs.is_label_dep = False;
+    fs.is_rescan_buf_exist = False;
 
     return ;
 }
@@ -66,12 +89,12 @@ static void initialize_sublist(void)
 }
 
 
-static struct sublist *find_subnode(char *name)
+static struct sublist *find_subnode(char *oname)
 {
     struct sublist *sp;
 
     for( sp = ss; sp != NULL; sp = sp->nextsub ){
-        if( strcmp(sp->origname, name) == 0 ){
+        if( strcmp(sp->origname, oname) == 0 ){
             return sp;  // already exists in sublist
         }
     }
@@ -80,25 +103,41 @@ static struct sublist *find_subnode(char *name)
 }
 
 
-static void gen_subnode(char *name)
+static void gen_subnode(char *oname)
 {
     struct sublist *ns, *sp;
     int len_name;
+    static int v = 0;
+    static int l = 0;
 
-    if( find_subnode(name) != NULL ){  // node already exists
+    if( (sp = find_subnode(oname)) != NULL ){  // node already exists
+        if( strncmp(sp->newname, "__L", 3) == 0 ){
+            reference_label(sp->newname);
+        }
         return ;
     }
-    if( strcmp(funcname, name) == 0 ){  // function name is not registered
+    if( strcmp(funcname, oname) == 0 ){  // function name is not registered
         return ;
     }
 
     // generate new node
     ns = (struct sublist*)Malloc(sizeof(struct sublist));
-    len_name = strlen(name) + 1;
+    len_name = strlen(oname) + 1;
     ns->origname = (char*)Malloc(sizeof(char)*len_name);
-    strcpy(ns->origname, name);
+    strcpy(ns->origname, oname);
     ns->newname = (char*)Malloc(sizeof(char)*MAXNEWNAME);
-    snprintf(ns->newname, MAXNEWNAME, "_vl%d", counter++);
+    if( fs.is_var_def || strcmp(ns->origname, "_r") == 0 ){
+        snprintf(ns->newname, MAXNEWNAME, "__v%d", v++);
+        define_variable_explicitly(ns->newname);
+    }else{
+        snprintf(ns->newname, MAXNEWNAME, "__L%d", l++);
+        if( fs.is_label_dep ){
+            define_label_explicitly(ns->newname);
+            fs.is_label_dep = False;
+        }else{
+            reference_label(ns->newname);
+        }
+    }
     ns->nextsub = NULL;
 
     // connect
@@ -144,6 +183,14 @@ static int rescan(void)
     int i;
     int token;
     struct sublist *s;
+    static int prevtoken = UNKNOWN;
+
+    if( fs.is_rescan_buf_exist ){
+        fs.is_rescan_buf_exist = False;
+        renum = rsbuf.nextnum;
+        strcpy(restr, rsbuf.nextstr);
+        return rsbuf.nexttoken;
+    }
 
     while( is_invalid_char(c) ){
         rescanc();
@@ -157,6 +204,9 @@ static int rescan(void)
         }
         restr[i] = '\0';
         if( (token = str_to_tokennum(restr)) == NAME_N ){
+            if( prevtoken == GOTO_N ){
+                fs.is_label_dep = True;
+            }
             gen_subnode(restr);
             if( (s = find_subnode(restr)) == NULL ){
                 token = FUNCNAME_N;
@@ -221,6 +271,8 @@ static int rescan(void)
         rescanc();
     }
 
+    prevtoken = token;
+
     return token;
 }
 
@@ -230,8 +282,17 @@ static void inline_function(void)
     int token;
     char strreg[MAXSTRLEN];
 
-    // skip formal parameter
+    // skip formal parameter and variable declaration
     while( rescan() != LBRACE_N );
+    if( (token = rescan()) == INT_N ){
+        while( rescan() != SEMI_N );
+    }else{
+        rsbuf.nexttoken = token;
+        rsbuf.nextnum = renum;
+        strcpy(rsbuf.nextstr, restr);
+        fs.is_rescan_buf_exist = True;
+    }
+    fs.is_var_def = False;
 
     // generate until return comes
     strcpy(strreg, str);  // escape str for generate
