@@ -359,6 +359,7 @@ static int is_val_update_statement(void)
     }
     else{
         fs.is_generate_token = True;
+        generate_indent_str(varname);
         // increment statement : '++'
         if( is_token_(INC_N) ){
             // do nothing
@@ -768,18 +769,21 @@ static void numerical_expression(void)
 
     simple_numerical_expression();
     if( is_minus_exist ){
-        strcpy(expr_l, "0");
-        strcpy(expr_o, "_sub");
-        exprcat(exprstr, expr_l, expr_o, expr_r);
-        strcpy(expr_l, exprstr);
+        initialize_arglist();
+        register_arg("0");
+        register_arg(expr_r);
+        expand("_sub", expr_l);
     }else{
         strcpy(expr_l, expr_r);
     }
 
     while( is_additive_operator(expr_o) ){
         simple_numerical_expression();
-        exprcat(exprstr, expr_l, expr_o, expr_r);
-        strcpy(expr_l, exprstr);
+        initialize_arglist();
+        register_arg(expr_l);
+        register_arg(expr_r);
+        expand(expr_o, expr_l);
+        finalize_arglist(NULL);
     }
 
     strcpy(expr_r, expr_l);
@@ -821,8 +825,11 @@ static void simple_numerical_expression(void)
 
     while( is_multiplicative_operator(expr_o) ){
         numerical_term();
-        exprcat(exprstr, expr_l, expr_o, expr_r);
-        strcpy(expr_l, exprstr);
+        initialize_arglist();
+        register_arg(expr_l);
+        register_arg(expr_r);
+        expand(expr_o, expr_l);
+        finalize_arglist(NULL);
     }
 
     strcpy(expr_r, expr_l);
@@ -860,9 +867,8 @@ static void numerical_term(void)
     // '(' num-expr ')'
     if( is_token_(LPAREN_N) ){
         numerical_expression();
-        strcpy(exprstr, expr_r);
+        fs.is_generate_token = False;
         is_token_or_err(RPAREN_N);
-        snprintf(expr_r, MAXSTRLEN, "(%s)", exprstr);
     }
     // atom-num-expr
     else{
@@ -875,16 +881,22 @@ static void numerical_term(void)
 
 static void atom_numerical_expression(void)
 {
+    char funcname[MAXSTRLEN];
     char exprstr[MAXSTRLEN];
     char var[MAXSTRLEN];
     int is_func_in_arg;
+    struct arglist *pas;
+    char retvar[MAXSTRLEN];
+
+    fs.is_generate_token = False;
 
     // var | func
-    fs.is_generate_token = False;
     if( is_token_(NAME_N) ){
         strcpy(exprstr, str);
+        strcpy(funcname, str);
         // funcname ('()' | '(' num-exprs, ')')
         if( is_token_(LPAREN_N) ){  // '('
+            pas = initialize_arglist();
             is_func_in_arg = ( fs.is_argument )? True : False;
             strcat(exprstr, "(");
             // funcname()
@@ -895,10 +907,12 @@ static void atom_numerical_expression(void)
             else{
                 fs.is_argument = True;
                 numerical_expression();
+                register_arg(expr_r);
                 strcat(exprstr, expr_r);
                 while( is_token_(COMMA_N) ){  // ','
                     strcat(exprstr, ", ");
                     numerical_expression();
+                    register_arg(expr_r);
                     strcat(exprstr, expr_r);
                 }
                 is_token_or_err(RPAREN_N);  // ')'
@@ -907,6 +921,8 @@ static void atom_numerical_expression(void)
                     fs.is_argument = False;
                 }
             }
+            expand(funcname, retvar);
+            strcpy(exprstr, retvar);
             if( fs.is_argument ){
                 create_newvariable(var, MAXSTRLEN);
                 generate_indent_str(var);
@@ -918,6 +934,7 @@ static void atom_numerical_expression(void)
             }else{
                 strcpy(expr_r, exprstr);
             }
+            finalize_arglist(pas);
         }
         // var
         else{
@@ -927,9 +944,6 @@ static void atom_numerical_expression(void)
     }
 
     // int-const
-    if( ! fs.is_argument ){
-        fs.is_generate_token = True;
-    }
     if( is_token_(NUM_N) ){
         strcpy(expr_r, str);
     }

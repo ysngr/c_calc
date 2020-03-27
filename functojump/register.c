@@ -21,15 +21,16 @@ static struct fproglist{
     struct fproglist *nextfprog;
 } *fs, *f;
 
+static struct arglist *as;
 
-static void *Malloc(int);
+
 static int is_funcprog_declared(void);
 static int is_variable_declared(void);
 static struct labellist *find_label(char*);
 
 
 
-static void *Malloc(int size)
+void *Malloc(int size)
 {
     void *p;
 
@@ -323,6 +324,70 @@ void check_label_link(void)
     return ;
 }
 
+
+struct arglist *initialize_arglist(void)
+{
+    struct arglist *pas;
+
+    if( as == NULL ){
+        return NULL;
+    }
+
+    pas = as;
+    as = NULL;
+
+    return pas;
+}
+
+
+void finalize_arglist(struct arglist *pas)
+{
+    struct arglist *ap, *rm;
+
+    if( as != NULL ){
+        while( as->nextarg != NULL ){
+            for( ap = as; ap->nextarg->nextarg != NULL; ap = ap->nextarg );
+            rm = ap->nextarg;
+            ap->nextarg = NULL;
+            free(rm->argname);
+            free(rm);
+        }
+        free(as);
+    }
+
+    as = pas;
+
+    return ;
+}
+
+
+void register_arg(char *argname)
+{
+    int len_arg = strlen(argname) + 1;
+    struct arglist *na, *ap;
+
+    // generate new node
+    na = (struct arglist*)Malloc(sizeof(struct arglist));
+    na->argname = (char*)Malloc(sizeof(char)*len_arg);
+    strncpy(na->argname, argname, len_arg);
+    na->nextarg = NULL;
+
+    // connect
+    if( as == NULL ){  // first arg
+        as = na;
+    }else{  // otherwise
+        for( ap = as; ap->nextarg != NULL; ap = ap->nextarg );
+        ap->nextarg = na;
+    }
+
+    return ;
+}
+
+
+struct arglist *get_args(void)
+{
+    return as;
+}
 
 
 // debug function
