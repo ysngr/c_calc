@@ -867,9 +867,8 @@ static void numerical_term(void)
     // '(' num-expr ')'
     if( is_token_(LPAREN_N) ){
         numerical_expression();
-        strcpy(exprstr, expr_r);
+        fs.is_generate_token = False;
         is_token_or_err(RPAREN_N);
-        snprintf(expr_r, MAXSTRLEN, "(%s)", exprstr);
     }
     // atom-num-expr
     else{

@@ -9,6 +9,7 @@ static FILE *fp;
 static fpos_t head, scanp, tail;
 
 static char funcname[MAXSTRLEN];
+static int fpnum;
 
 static char c, uc;
 static char restr[MAXSTRLEN];
@@ -16,6 +17,7 @@ static int renum;
 
 static struct flags{
     int is_register_exec;
+    int is_formal_parameter;
     int is_var_def;
     int is_label_dep;
     int is_rescan_buf_exist;
@@ -37,9 +39,8 @@ static struct buffer{
 
 static void initialize_expand(char*);
 static void initialize_flag(void);
-static void initialize_sublist(void);
 static struct sublist *find_subnode(char*);
-static void gen_subnode(char*);
+static struct sublist *gen_subnode(char*);
 static void rescanc(void);
 static int rescan(void);
 static void reungetc(char);
@@ -58,9 +59,10 @@ static void initialize_expand(char *fname)
     fgetpos(fp, &tail);
 
     strcpy(funcname, fname);
+    fpnum = 0;
 
     initialize_flag();
-    initialize_sublist();
+    ss = NULL;
 
     rescanc();
 
@@ -71,24 +73,11 @@ static void initialize_expand(char *fname)
 static void initialize_flag(void)
 {
     fs.is_register_exec = False;
+    fs.is_formal_parameter = False;
     fs.is_var_def = True;
     fs.is_label_dep = False;
     fs.is_rescan_buf_exist = False;
     fs.is_ungetc_exec = False;
-
-    return ;
-}
-
-
-static void initialize_sublist(void)
-{
-    struct arglist *ap;
-
-    ss = NULL;
-
-    for( ap = get_args(); ap != NULL; ap = ap->nextarg ){
-        gen_subnode(ap->argname);
-    }
 
     return ;
 }
@@ -108,7 +97,7 @@ static struct sublist *find_subnode(char *oname)
 }
 
 
-static void gen_subnode(char *oname)
+static struct sublist *gen_subnode(char *oname)
 {
     struct sublist *ns, *sp;
     int len_name;
@@ -123,10 +112,7 @@ static void gen_subnode(char *oname)
                 reference_label(sp->newname);
             }
         }
-        return ;
-    }
-    if( strcmp(funcname, oname) == 0 ){  // function name is not registered
-        return ;
+        return sp;
     }
 
     // generate new node
@@ -141,6 +127,9 @@ static void gen_subnode(char *oname)
     if( fs.is_var_def || strcmp(ns->origname, "_r") == 0 ){
         snprintf(ns->newname, MAXNEWNAME, "__v%d", v++);
         define_variable_explicitly(ns->newname);
+        if( fs.is_formal_parameter ){
+            fpnum++;
+        }
     }else{
         snprintf(ns->newname, MAXNEWNAME, "__L%d", l++);
         if( fs.is_label_dep ){
@@ -159,7 +148,7 @@ static void gen_subnode(char *oname)
         sp->nextsub = ns;
     }
 
-    return ;
+    return ns;
 }
 
 
@@ -235,12 +224,11 @@ static int rescan(void)
                 fs.is_label_dep = True;
             }
             if( fs.is_register_exec ){
-                gen_subnode(restr);
-            }
-            if( (s = find_subnode(restr)) == NULL ){
-                token = FUNCNAME_N;
-            }else{
+                s = gen_subnode(restr);
                 strcpy(restr, s->newname);
+            }
+            if( strcmp(funcname, restr) == 0 ){
+                token = FUNCNAME_N;
             }
         }
     }
@@ -309,10 +297,15 @@ static int rescan(void)
 static void inline_function(void)
 {
     int token;
+    int argnum;
+    struct arglist *ap;
+    struct sublist *sp;
     char strreg[MAXSTRLEN];
 
     // skip formal parameter and variable declaration
+    fs.is_formal_parameter = True;
     while( rescan() != LBRACE_N );
+    fs.is_formal_parameter = False;
     if( (token = rescan()) == INT_N ){
         while( rescan() != SEMI_N );
     }else{
@@ -323,8 +316,29 @@ static void inline_function(void)
     }
     fs.is_var_def = False;
 
-    // generate until return comes
     strcpy(strreg, str);  // escape str for generate
+
+    // generate assignment of argument
+    argnum = 0;
+    sp = ss;
+    ap = get_args();
+    while( ap != NULL && sp != NULL ){
+        fsetpos(fp, &tail);
+        generate_indent_str(sp->newname);
+        generate(ASSIGN_N);
+        generate_str(ap->argname);
+        generate(SEMI_N);
+        fgetpos(fp, &tail);
+        sp = sp->nextsub;
+        ap = ap-> nextarg;
+        argnum++;
+    }
+    if( fpnum != argnum ){
+        printf("Invalid number of arguments.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // generate until return comes
     while( (token = rescan()) != RETURN_N ){
         strcpy(str, restr);
         fsetpos(fp, &tail);
@@ -334,6 +348,7 @@ static void inline_function(void)
     rescan();  // skip '('
     rescan();  // store retvar to restr
     fsetpos(fp, &tail);
+
     strcpy(str, strreg);  // restore str
 
     return ;
@@ -366,11 +381,11 @@ static void print_sublist(void)
 {
     struct sublist *sp;
 
-    printf("Sublist =");
+    printf("Sublist of function \"%s\" =", funcname);
     for( sp = ss; sp != NULL; sp = sp->nextsub ){
         printf(" [%s->%s]", sp->origname, sp->newname);
     }
-    printf("\n");
+    printf("\n\n");
 
     return ;
 }
