@@ -10,14 +10,16 @@ static fpos_t head, scanp, tail;
 
 static char funcname[MAXSTRLEN];
 
-static char c;
+static char c, uc;
 static char restr[MAXSTRLEN];
 static int renum;
 
 static struct flags{
+    int is_register_exec;
     int is_var_def;
     int is_label_dep;
     int is_rescan_buf_exist;
+    int is_ungetc_exec;
 } fs;
 
 static struct sublist{
@@ -40,6 +42,7 @@ static struct sublist *find_subnode(char*);
 static void gen_subnode(char*);
 static void rescanc(void);
 static int rescan(void);
+static void reungetc(char);
 static void inline_function(void);
 static void finalize_expand(void);
 
@@ -67,9 +70,11 @@ static void initialize_expand(char *fname)
 
 static void initialize_flag(void)
 {
+    fs.is_register_exec = False;
     fs.is_var_def = True;
     fs.is_label_dep = False;
     fs.is_rescan_buf_exist = False;
+    fs.is_ungetc_exec = False;
 
     return ;
 }
@@ -112,7 +117,11 @@ static void gen_subnode(char *oname)
 
     if( (sp = find_subnode(oname)) != NULL ){  // node already exists
         if( strncmp(sp->newname, "__L", 3) == 0 ){
-            reference_label(sp->newname);
+            if( fs.is_label_dep ){
+                define_label_explicitly(sp->newname);
+            }else{
+                reference_label(sp->newname);
+            }
         }
         return ;
     }
@@ -126,6 +135,9 @@ static void gen_subnode(char *oname)
     ns->origname = (char*)Malloc(sizeof(char)*len_name);
     strcpy(ns->origname, oname);
     ns->newname = (char*)Malloc(sizeof(char)*MAXNEWNAME);
+    ns->nextsub = NULL;
+
+    // register newname
     if( fs.is_var_def || strcmp(ns->origname, "_r") == 0 ){
         snprintf(ns->newname, MAXNEWNAME, "__v%d", v++);
         define_variable_explicitly(ns->newname);
@@ -138,7 +150,6 @@ static void gen_subnode(char *oname)
             reference_label(ns->newname);
         }
     }
-    ns->nextsub = NULL;
 
     // connect
     if( ss == NULL ){
@@ -158,6 +169,7 @@ void expand(char *funcname, char *retvar)
 
     while( rescan() != FUNCNAME_N );
 
+    fs.is_register_exec = True;
     inline_function();
     strcpy(retvar, restr);
 
@@ -170,9 +182,24 @@ void expand(char *funcname, char *retvar)
 
 static void rescanc(void)
 {
+    if( fs.is_ungetc_exec ){
+        fs.is_ungetc_exec = False;
+        c = uc;
+        return ;
+    }
+
     fsetpos(fp, &scanp);
     c = fgetc(fp);
     fgetpos(fp, &scanp);
+
+    return ;
+}
+
+
+static void reungetc(char c)
+{
+    uc = c;
+    fs.is_ungetc_exec = True;
 
     return ;
 }
@@ -207,7 +234,9 @@ static int rescan(void)
             if( prevtoken == GOTO_N ){
                 fs.is_label_dep = True;
             }
-            gen_subnode(restr);
+            if( fs.is_register_exec ){
+                gen_subnode(restr);
+            }
             if( (s = find_subnode(restr)) == NULL ){
                 token = FUNCNAME_N;
             }else{
@@ -242,7 +271,7 @@ static int rescan(void)
                         token = CDEC_N;
                     }else{
                         token = DEC_N;
-                        ungetc(c, fp);
+                        reungetc(c);
                     }
                     break;
                 }else{
