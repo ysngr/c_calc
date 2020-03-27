@@ -769,18 +769,21 @@ static void numerical_expression(void)
 
     simple_numerical_expression();
     if( is_minus_exist ){
-        strcpy(expr_l, "0");
-        strcpy(expr_o, "_sub");
-        exprcat(exprstr, expr_l, expr_o, expr_r);
-        strcpy(expr_l, exprstr);
+        initialize_arglist();
+        register_arg("0");
+        register_arg(expr_r);
+        expand("_sub", expr_l);
     }else{
         strcpy(expr_l, expr_r);
     }
 
     while( is_additive_operator(expr_o) ){
         simple_numerical_expression();
-        exprcat(exprstr, expr_l, expr_o, expr_r);
-        strcpy(expr_l, exprstr);
+        initialize_arglist();
+        register_arg(expr_l);
+        register_arg(expr_r);
+        expand(expr_o, expr_l);
+        finalize_arglist(NULL);
     }
 
     strcpy(expr_r, expr_l);
@@ -799,7 +802,7 @@ static int is_additive_operator(char *expr_o)
 {
     // '+'
     if( is_token_(PLUS_N) ){
-        strcpy(expr_o, "_add");  // TODO expansion _add function
+        strcpy(expr_o, "_add");
         return True;
     }
     // '-'
@@ -822,8 +825,11 @@ static void simple_numerical_expression(void)
 
     while( is_multiplicative_operator(expr_o) ){
         numerical_term();
-        exprcat(exprstr, expr_l, expr_o, expr_r);
-        strcpy(expr_l, exprstr);
+        initialize_arglist();
+        register_arg(expr_l);
+        register_arg(expr_r);
+        expand(expr_o, expr_l);
+        finalize_arglist(NULL);
     }
 
     strcpy(expr_r, expr_l);
