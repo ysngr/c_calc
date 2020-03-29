@@ -1,4 +1,7 @@
 /* univfunc.h */
+#ifndef UNIVFUNC_H
+#define UNIVFUNC_H
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -21,4 +24,5 @@ int replace(int, int, int);
 int sequence(int, int);
 
 int is_code(int);
-int dectoprog(int);
+
+#endif

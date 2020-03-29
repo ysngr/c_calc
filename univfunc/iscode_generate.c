@@ -1,19 +1,33 @@
-/* code.c */
+/* iscode_generate.c */
 #include "univfunc.h"
+#include "iscode.h"
+
+char filename[MAXSTRLEN] = "prog.c";
 
 static FILE *fp;
 
+static int dectoprog(int);
 static int halt(void);
 
 
-int dectoprog(int n)
+int is_code(int n)
+{
+    if( dectoprog(n) == False ){
+        return False;
+    }
+
+    return parse();
+}
+
+
+static int dectoprog(int n)
 {
     int i;
     int varnum, fpnum, stat;
     int a, b;
     char indent[5] = {' ', ' ', ' ', ' '};
 
-    if( (fp = fopen("prog.c", "w")) == NULL ){
+    if( (fp = fopen(filename, "w")) == NULL ){
         printf("File cannot be generated.\n");
         exit(EXIT_FAILURE);
     }
