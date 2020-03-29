@@ -4,6 +4,11 @@
 
 static int token;
 
+static struct counter{
+    int v;
+    int l;
+} cnt;
+
 static struct flags{
     int is_var_def;
     int is_label_dep;
@@ -16,6 +21,7 @@ static void is_token_or_err(int);
 static void error(void);
 
 static void init_parse(void);
+static void init_counter(void);
 static void init_flag(void);
 
 static void variable_names(void);
@@ -87,6 +93,15 @@ static void init_parse(void)
 }
 
 
+static void init_counter(void)
+{
+    cnt.v = 0;
+    cnt.l = 0;
+
+    return ;
+}
+
+
 static void init_flag(void)
 {
     fs.is_var_def = True;
@@ -101,6 +116,7 @@ void parse(void)
     init_parse();
 
     do{
+        init_counter();
         init_flag();
         init_fprog_list();
 
@@ -139,6 +155,7 @@ static void variable_names(void)
 static int is_variable(void)
 {
     int i;
+    char varnum[MAXSTRLEN];
 
     if( token != NAME_N ){
         return False;
@@ -152,9 +169,13 @@ static int is_variable(void)
         if( isdigit(str[i]) == False ){
             return False;
         }
+        varnum[i-1] = str[i];
     }
 
     if( fs.is_var_def ){
+        if( ++cnt.v != atoi(varnum) ){
+            error();
+        }
         define_variable();
     }else{
         reference_variable();
@@ -191,6 +212,7 @@ static void label(void)
 static void labelname(void)
 {
     int i;
+    char labelnum[MAXSTRLEN];
 
     if( token != NAME_N ){
         error();
@@ -204,12 +226,16 @@ static void labelname(void)
         if( isdigit(str[i]) == False ){
             error();
         }
+        labelnum[i-1] = str[i];
     }
 
     if( fs.is_label_dep ){
         generate_label();
         fs.is_label_dep = False;
     }else{
+        if( ++cnt.l != atoi(labelnum) ){
+            error();
+        }
         paste_label(str);
     }
 
