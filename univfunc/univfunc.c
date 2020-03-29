@@ -4,10 +4,9 @@
 
 int main(void)
 {
-    int a[3] = {0, 1, EMPTY};
-    int n;
+    int a[3] = {0, 0, EMPTY};
 
-    is_code(encode(a, 3));
+    printf("is_code = %d\n", is_code(encode(a, 3)));
 
     return 0;
 }
@@ -155,14 +154,4 @@ int sequence(int x, int k)
     }
 
     return a;
-}
-
-
-int is_code(int n)
-{
-    if( dectoprog(n) == False ){
-        return False;
-    }
-
-    return 1/*is_jumpprog()*/;
 }
