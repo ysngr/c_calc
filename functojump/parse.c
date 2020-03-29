@@ -4,6 +4,7 @@
 
 static int token;
 static char expr_r[MAXSTRLEN];
+static char cond_expr[MAXSTRLEN];
 
 static struct buffer{
     int nexttoken;
@@ -13,10 +14,13 @@ static struct buffer{
 
 static struct flags{
     int is_var_def;
+    int is_formal_parameter;
     int is_label_dep;
     int is_token_buf_exist;
     int is_generate_token;
     int is_argument;
+    int is_generate_str;
+    int is_assign_right;
 } fs;
 
 static struct counter{
@@ -43,7 +47,6 @@ static void calc_main(void);
 static void statements(void);
 static int is_label(void);
 static int is_statement(void);
-static int is_single_statement(void);
 static int is_val_update_statement(void);
 static int is_if_statement(void);
 static int is_while_statement(void);
@@ -55,7 +58,7 @@ static void conditional_expression(void);
 static void simple_conditional_expression(void);
 static void conditional_term(void);
 static void atom_conditional_expression(void);
-static int is_relational_operator(void);
+static int relational_operator(void);
 static void numerical_expression(void);
 static int is_additive_operator(char*);
 static void simple_numerical_expression(void);
@@ -108,7 +111,7 @@ static int is_token_(int cmptoken)
         }
         // variable, function
         else if( fs.is_var_def ){
-            define_variable();
+            define_variable(fs.is_formal_parameter);
         }else{
             reference_variable();
         }
@@ -155,10 +158,13 @@ static void initialize_parse(void)
 static void initialize_flag(void)
 {
     fs.is_var_def = True;
+    fs.is_formal_parameter = False;
     fs.is_label_dep = False;
     fs.is_token_buf_exist = False;
     fs.is_generate_token = True;
     fs.is_argument = False;
+    fs.is_generate_str = True;
+    fs.is_assign_right = False;
 
     return ;
 }
@@ -203,7 +209,9 @@ static void formal_parameters(void)
 {
     // '(' var-names ')'
     is_token_or_err(LPAREN_N);
+    fs.is_formal_parameter = True;
     variable_names();
+    fs.is_formal_parameter = False;
     is_token_or_err(RPAREN_N);
 
     return ;
@@ -239,6 +247,13 @@ static void calc_main(void)
 {
     fs.is_var_def = False;
     statements();
+
+    generate_arrlabel("_L");
+    generate(RETURN_N);
+    generate(LPAREN_N);
+    generate_str("_r");
+    generate(RPAREN_N);
+    generate(SEMI_N);
 
     return ;
 }
@@ -320,38 +335,43 @@ static int is_statement(void)
 }
 
 
-static int is_single_statement(void)
-{
-    generate_ln_indent();
-    is_statement();
-    generate_nl_outdent();
-
-    return True;
-}
-
-
 static int is_val_update_statement(void)
 {
+    char varname[MAXSTRLEN];
+
     // var
+    fs.is_generate_token = False;
+    strcpy(varname, str);
     if( is_token_(NAME_N) == False ){
+        fs.is_generate_token = True;
         return False;
     }
 
     // assignment statement : '=' num-expr
     if( is_token_(ASSIGN_N) ){
+        fs.is_assign_right = True;
         numerical_expression();
+        fs.is_assign_right = False;
+        generate_indent_str(varname);
+        generate(ASSIGN_N);
+        generate_str(expr_r);
+        fs.is_generate_token = True;
     }
-    // increment statement : '++'
-    else if( is_token_(INC_N) ){
-        // do nothing
-    }
-    // decrement statement : '--'
-    else if( is_token_(DEC_N) ){
-        // do nothing
-    }
-    // conditional decrement statement : '--''
     else{
-        is_token_or_err(CDEC_N);
+        fs.is_generate_token = True;
+        generate_indent_str(varname);
+        // increment statement : '++'
+        if( is_token_(INC_N) ){
+            // do nothing
+        }
+        // decrement statement : '--'
+        else if( is_token_(DEC_N) ){
+            // do nothing
+        }
+        // conditional decrement statement : '--''
+        else{
+            is_token_or_err(CDEC_N);
+        }
     }
 
     // ';'
@@ -364,7 +384,9 @@ static int is_val_update_statement(void)
 static int is_if_statement(void)
 {
     // 'if'
+    fs.is_generate_token = False;
     if( is_token_(IF_N) == False ){
+        fs.is_generate_token = True;
         return False;
     }
 
@@ -372,13 +394,20 @@ static int is_if_statement(void)
     is_token_or_err(LPAREN_N);
     conditional_expression();
     is_token_or_err(RPAREN_N);
+    generate(IF_N);
+    generate(LPAREN_N);
+    generate_str(cond_expr);
+    generate(RPAREN_N);
+    fs.is_generate_token = True;
 
     // '{' stats '}' | stat
     if( is_token_(LBRACE_N) ){
         statements();
         is_token_or_err(RBRACE_N);
     }else{
-        is_single_statement();
+        generate(LBRACE_N);
+        is_statement();
+        generate(RBRACE_N);
     }
 
     // 'else'
@@ -388,7 +417,9 @@ static int is_if_statement(void)
             statements();
             is_token_or_err(RBRACE_N);
         }else{
-            is_single_statement();
+            generate(LBRACE_N);
+            is_statement();
+            generate(RBRACE_N);
         }
     }
 
@@ -408,13 +439,16 @@ static int is_while_statement(void)
     }
     create_newlabel(label, MAXSTRLEN);
     generate_arrlabel(label);
-    generate(IF_N);
-    fs.is_generate_token = True;
 
     // '(' cond-expr ')'
     is_token_or_err(LPAREN_N);
     conditional_expression();
     is_token_or_err(RPAREN_N);
+    generate(IF_N);
+    generate(LPAREN_N);
+    generate_str(cond_expr);
+    generate(RPAREN_N);
+    fs.is_generate_token = True;
 
     // '{' stats '}' | stat
     if( is_token_(LBRACE_N) ){
@@ -488,16 +522,29 @@ static int is_loop_statement(void)
 
 static int is_return_statement(void)
 {
+    char var[MAXSTRLEN] = "_r";
+    char label[MAXSTRLEN] = "_L";
+
     // 'return'
+    fs.is_generate_token = False;
     if( is_token_(RETURN_N) == False ){
+        fs.is_generate_token = True;
         return False;
     }
 
     // '(' num-expr ')' ';'
     is_token_or_err(LPAREN_N);
+    generate_indent_str(var);
+    define_variable_explicitly(var);
+    generate(ASSIGN_N);
+    fs.is_generate_token = True;
     numerical_expression();
+    fs.is_generate_token = False;
+    generate(SEMI_N);
+    generate_goto(label);
     is_token_or_err(RPAREN_N);
     is_token_or_err(SEMI_N);
+    fs.is_generate_token = True;
 
     return True;
 }
@@ -521,10 +568,22 @@ static int is_goto_statement(void)
 
 static void conditional_expression(void)
 {
+    int is_multiple_simple_cond_expr = False;
+    char expr[MAXSTRLEN];
+
     // simple-cond-expr { '||' simple-cond_expr }
     simple_conditional_expression();
+    strcpy(expr, cond_expr);
     while( is_token_(OR_N) ){
+        is_multiple_simple_cond_expr = True;
+        strcat(expr, ") || (");
         simple_conditional_expression();
+        strcat(expr, cond_expr);
+    }
+    if( is_multiple_simple_cond_expr ){
+        snprintf(cond_expr, MAXSTRLEN, "(%s)", expr);
+    }else{
+        strcpy(cond_expr, expr);
     }
 
     return ;
@@ -533,10 +592,22 @@ static void conditional_expression(void)
 
 static void simple_conditional_expression(void)
 {
+    int is_muptiple_cond_expr = False;
+    char expr[MAXSTRLEN];
+
     // cond-term { '&&' cond-term }
     conditional_term();
+    strcpy(expr, cond_expr);
     while( is_token_(AND_N) ){
+        is_muptiple_cond_expr = True;
+        strcat(expr, ") && (");
         conditional_term();
+        strcat(expr, cond_expr);
+    }
+    if( is_muptiple_cond_expr ){
+        snprintf(cond_expr, MAXSTRLEN, "(%s)", expr);
+    }else{
+        strcpy(cond_expr, expr);
     }
 
     return ;
@@ -565,48 +636,120 @@ static void conditional_term(void)
 
 static void atom_conditional_expression(void)
 {
+    int ope;
+    char var1[MAXSTRLEN], var2[MAXSTRLEN];
+    char expr1[MAXSTRLEN], expr2[MAXSTRLEN];
+
     // num-expr rel-ope num-expr { rel-ope num-expr }
+    fs.is_generate_str = False;
     numerical_expression();
-    if( is_relational_operator() == False ){
-        error();
-    }
+    fs.is_generate_token = False;
+    strcpy(expr1, expr_r);
+    ope = relational_operator();
     numerical_expression();
-    while( is_relational_operator() ){
-        numerical_expression();
+    fs.is_generate_token = False;
+    strcpy(expr2, expr_r);
+    fs.is_generate_str = True;
+
+    switch( ope ){
+        case EQUAL_N :
+        case NOTEQ_N :
+            create_newvariable(var1, MAXSTRLEN);
+            generate_indent_str(var1);
+            define_variable_explicitly(var1);
+            generate(ASSIGN_N);
+            generate_str("_sub");
+            generate(LPAREN_N);
+            generate_str(expr1);
+            generate(COMMA_N);
+            generate_str(expr2);
+            generate(RPAREN_N);
+            generate(SEMI_N);
+            create_newvariable(var2, MAXSTRLEN);
+            generate_indent_str(var2);
+            define_variable_explicitly(var2);
+            generate(ASSIGN_N);
+            generate_str("_sub");
+            generate(LPAREN_N);
+            generate_str(expr2);
+            generate(COMMA_N);
+            generate_str(expr1);
+            generate(RPAREN_N);
+            generate(SEMI_N);
+            if( ope == EQUAL_N ){
+                snprintf(cond_expr, MAXSTRLEN, "(!(%s > 0)) && (!(%s > 0))", var1, var2);
+            }else{
+                snprintf(cond_expr, MAXSTRLEN, "(%s > 0) || (%s > 0)", var1, var2);
+            }
+            break;
+        case LE_N :
+        case LEEQ_N :
+        case RE_N :
+        case REEQ_N :
+            create_newvariable(var1, MAXSTRLEN);
+            generate_indent_str(var1);
+            define_variable_explicitly(var1);
+            generate(ASSIGN_N);
+            generate_str("_sub");
+            generate(LPAREN_N);
+            if( ope == RE_N || ope == REEQ_N ){
+                generate_str(expr1);
+            }else{
+                generate_str(expr2);
+            }
+            generate(COMMA_N);
+            if( ope == RE_N || ope == REEQ_N ){
+                generate_str(expr2);
+            }else{
+                generate_str(expr1);
+            }
+            generate(RPAREN_N);
+            generate(SEMI_N);
+            if( ope == LEEQ_N || ope == REEQ_N ){
+                generate_indent_str(var1);
+                generate(INC_N);
+                generate(SEMI_N);
+            }
+            snprintf(cond_expr, MAXSTRLEN, "%s > 0", var1);
+            break;
     }
 
     return ;
 }
 
 
-static int is_relational_operator(void)
+static int relational_operator(void)
 {
     // '=='
     if( is_token_(EQUAL_N) ){
-        return True;
+        return EQUAL_N;
     }
     // '!='
     else if( is_token_(NOTEQ_N) ){
-        return True;
+        return NOTEQ_N;
     }
     // '<'
     else if( is_token_(LE_N) ){
-        return True;
+        return LE_N;
     }
     // '<='
     else if( is_token_(LEEQ_N) ){
-        return True;
+        return LEEQ_N;
     }
     // '>'
     else if( is_token_(RE_N) ){
-        return True;
+        return RE_N;
     }
     // '>='
     else if( is_token_(REEQ_N) ){
-        return True;
+        return REEQ_N;
+    }
+    // otherwise
+    else{
+        error();
     }
 
-    return False;
+    return True;  // never reached
 }
 
 
@@ -626,24 +769,28 @@ static void numerical_expression(void)
 
     simple_numerical_expression();
     if( is_minus_exist ){
-        strcpy(expr_l, "0");
-        strcpy(expr_o, "_sub");
-        exprcat(exprstr, expr_l, expr_o, expr_r);
-        strcpy(expr_l, exprstr);
+        initialize_arglist();
+        register_arg("0");
+        register_arg(expr_r);
+        expand("_sub", expr_l);
     }else{
         strcpy(expr_l, expr_r);
     }
 
     while( is_additive_operator(expr_o) ){
         simple_numerical_expression();
-        exprcat(exprstr, expr_l, expr_o, expr_r);
-        strcpy(expr_l, exprstr);
+        initialize_arglist();
+        register_arg(expr_l);
+        register_arg(expr_r);
+        expand(expr_o, expr_l);
+        finalize_arglist(NULL);
     }
 
-    if( fs.is_argument ){
-        strcpy(expr_r, expr_l);
-    }else{
-        generate_str(expr_l);
+    strcpy(expr_r, expr_l);
+    if( ! fs.is_argument ){
+        if( fs.is_generate_str && ! fs.is_assign_right ){
+            generate_str(expr_r);
+        }
         fs.is_generate_token = True;
     }
 
@@ -678,8 +825,11 @@ static void simple_numerical_expression(void)
 
     while( is_multiplicative_operator(expr_o) ){
         numerical_term();
-        exprcat(exprstr, expr_l, expr_o, expr_r);
-        strcpy(expr_l, exprstr);
+        initialize_arglist();
+        register_arg(expr_l);
+        register_arg(expr_r);
+        expand(expr_o, expr_l);
+        finalize_arglist(NULL);
     }
 
     strcpy(expr_r, expr_l);
@@ -717,9 +867,8 @@ static void numerical_term(void)
     // '(' num-expr ')'
     if( is_token_(LPAREN_N) ){
         numerical_expression();
-        strcpy(exprstr, expr_r);
+        fs.is_generate_token = False;
         is_token_or_err(RPAREN_N);
-        snprintf(expr_r, MAXSTRLEN, "(%s)", exprstr);
     }
     // atom-num-expr
     else{
@@ -732,39 +881,70 @@ static void numerical_term(void)
 
 static void atom_numerical_expression(void)
 {
+    char funcname[MAXSTRLEN];
     char exprstr[MAXSTRLEN];
+    char var[MAXSTRLEN];
+    int is_func_in_arg;
+    struct arglist *pas;
+    char retvar[MAXSTRLEN];
+
+    fs.is_generate_token = False;
 
     // var | func
     if( is_token_(NAME_N) ){
         strcpy(exprstr, str);
-        // '()' | '(' num-exprs, ')'
+        strcpy(funcname, str);
+        // funcname ('()' | '(' num-exprs, ')')
         if( is_token_(LPAREN_N) ){  // '('
+            pas = initialize_arglist();
+            is_func_in_arg = ( fs.is_argument )? True : False;
             strcat(exprstr, "(");
-            // func()
+            // funcname()
             if( is_token_(RPAREN_N) ){  // ')'
                 strcat(exprstr, ")");
             }
-            // func(fp, ... ,fp)
+            // funcname(fp, ... ,fp)
             else{
                 fs.is_argument = True;
                 numerical_expression();
+                register_arg(expr_r);
                 strcat(exprstr, expr_r);
                 while( is_token_(COMMA_N) ){  // ','
                     strcat(exprstr, ", ");
                     numerical_expression();
+                    register_arg(expr_r);
                     strcat(exprstr, expr_r);
                 }
                 is_token_or_err(RPAREN_N);  // ')'
                 strcat(exprstr, ")");
-                fs.is_argument = False;
+                if( ! is_func_in_arg ){
+                    fs.is_argument = False;
+                }
             }
+            expand(funcname, retvar);
+            strcpy(exprstr, retvar);
+            if( fs.is_argument ){
+                create_newvariable(var, MAXSTRLEN);
+                generate_indent_str(var);
+                define_variable_explicitly(var);
+                generate(ASSIGN_N);
+                generate_str(exprstr);
+                generate(SEMI_N);
+                strcpy(expr_r, var);
+            }else{
+                strcpy(expr_r, exprstr);
+            }
+            finalize_arglist(pas);
         }
         // var
-        strcpy(expr_r, exprstr);
+        else{
+            strcpy(expr_r, exprstr);
+        }
+        return ;
     }
 
     // int-const
-    else if( is_token_(NUM_N) ){
+    if( is_token_(NUM_N) ){
         strcpy(expr_r, str);
     }
 

@@ -3,7 +3,10 @@
 
 
 static FILE *fp;
+static fpos_t head;
+static char outputfile[MAXSTRLEN];
 static int depth;
+
 static struct flags{
     int is_gen_indent;
 } fs;
@@ -18,7 +21,7 @@ static char token_to_str[TOKEN_NUM][MAXSTRLEN] = {
     "{"     , "}"     , ","     , ":"     , ";"
 };
 
-static void name_outputfile(char*, char*);
+static void name_outputfile(char*);
 static void generate_space_before(int);
 static void generate_space_after(int);
 static void generate_indent(void);
@@ -27,14 +30,13 @@ static void generate_indent(void);
 
 void initialize_generator(char *inputfile)
 {
-    char outputfile[MAXSTRLEN];
+    name_outputfile(inputfile);
 
-    name_outputfile(outputfile, inputfile);
-
-    if( (fp = fopen(outputfile, "w")) == NULL ){
+    if( (fp = fopen(outputfile, "w+")) == NULL ){
         printf("Output file cannot be generated.\n");
         exit(EXIT_FAILURE);
     }
+    fgetpos(fp, &head);
 
     depth = 0;
     fs.is_gen_indent = False;
@@ -43,7 +45,19 @@ void initialize_generator(char *inputfile)
 }
 
 
-static void name_outputfile(char *outputfile, char *inputfile)
+FILE *get_generate_fp(void)
+{
+    return fp;
+}
+
+
+fpos_t get_generate_head(void)
+{
+    return head;
+}
+
+
+static void name_outputfile(char *inputfile)
 {
     int i, j;
     char inputfiledelext[MAXSTRLEN];
@@ -150,28 +164,6 @@ static void generate_indent(void)
         }
         fs.is_gen_indent = False;
     }
-
-    return ;
-}
-
-
-void generate_ln_indent(void)
-{
-    fprintf(fp, "\n");
-    depth++;
-    fs.is_gen_indent = True;
-
-    return ;
-}
-
-
-void generate_nl_outdent(void)
-{
-    if( ! fs.is_gen_indent ){
-        fprintf(fp, "\n");
-    }
-    depth--;
-    fs.is_gen_indent = True;
 
     return ;
 }

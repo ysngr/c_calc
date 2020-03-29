@@ -3,6 +3,7 @@
 
 static struct varlist{
     char *varname;
+    int is_formal_parameter;
     struct varlist *nextvar;
 } *v;
 
@@ -20,15 +21,16 @@ static struct fproglist{
     struct fproglist *nextfprog;
 } *fs, *f;
 
+static struct arglist *as;
 
-static void *Malloc(int);
+
 static int is_funcprog_declared(void);
 static int is_variable_declared(void);
 static struct labellist *find_label(char*);
 
 
 
-static void *Malloc(int size)
+void *Malloc(int size)
 {
     void *p;
 
@@ -75,7 +77,7 @@ void initialize_fprog_list(void)
 }
 
 
-void define_variable(void)
+void define_variable(int is_formal_parameter)
 {
     int len_str = strlen(str) + 1;
     struct varlist *nv;
@@ -102,6 +104,7 @@ void define_variable(void)
         nv = (struct varlist*)Malloc(sizeof(struct varlist));
         nv->varname = (char*)Malloc(sizeof(char)*len_str);
         strncpy(nv->varname, str, len_str);
+        nv->is_formal_parameter = is_formal_parameter;
         nv->nextvar = NULL;
 
         // connect
@@ -122,16 +125,15 @@ void define_variable_explicitly(char *var)
     int len_var = strlen(var) + 1;
     struct varlist *nv;
 
-    // variable name
     if( is_variable_declared() ){
-        printf("\nVariable \"%s\" is duplicated.\n", str);
-        exit(EXIT_FAILURE);
+        return ;
     }
 
     // generate new node
     nv = (struct varlist*)Malloc(sizeof(struct varlist));
     nv->varname = (char*)Malloc(sizeof(char)*len_var);
     strncpy(nv->varname, var, len_var);
+    nv->is_formal_parameter = False;
     nv->nextvar = NULL;
 
     // connect
@@ -323,6 +325,70 @@ void check_label_link(void)
 }
 
 
+struct arglist *initialize_arglist(void)
+{
+    struct arglist *pas;
+
+    if( as == NULL ){
+        return NULL;
+    }
+
+    pas = as;
+    as = NULL;
+
+    return pas;
+}
+
+
+void finalize_arglist(struct arglist *pas)
+{
+    struct arglist *ap, *rm;
+
+    if( as != NULL ){
+        while( as->nextarg != NULL ){
+            for( ap = as; ap->nextarg->nextarg != NULL; ap = ap->nextarg );
+            rm = ap->nextarg;
+            ap->nextarg = NULL;
+            free(rm->argname);
+            free(rm);
+        }
+        free(as);
+    }
+
+    as = pas;
+
+    return ;
+}
+
+
+void register_arg(char *argname)
+{
+    int len_arg = strlen(argname) + 1;
+    struct arglist *na, *ap;
+
+    // generate new node
+    na = (struct arglist*)Malloc(sizeof(struct arglist));
+    na->argname = (char*)Malloc(sizeof(char)*len_arg);
+    strncpy(na->argname, argname, len_arg);
+    na->nextarg = NULL;
+
+    // connect
+    if( as == NULL ){  // first arg
+        as = na;
+    }else{  // otherwise
+        for( ap = as; ap->nextarg != NULL; ap = ap->nextarg );
+        ap->nextarg = na;
+    }
+
+    return ;
+}
+
+
+struct arglist *get_args(void)
+{
+    return as;
+}
+
 
 // debug function
 void print_list(void)
@@ -334,17 +400,23 @@ void print_list(void)
     // funcprog
     for( fp = fs; fp != NULL; fp = fp->nextfprog ){
         printf("Funcprog = %s\n", fp->fprogname);
-        // var
-        printf("Vars =");
-        for( vp = fp->vars; vp != NULL; vp = vp->nextvar ){
+        // formal parameters
+        printf("Formal parameters =");
+        for( vp = fp->vars; vp != NULL && vp->is_formal_parameter; vp = vp->nextvar ){
             printf(" %s", vp->varname);
         }
         printf("\n");
-        // label
+        // vars
+        printf("Vars =");
+        for( ; vp != NULL; vp = vp->nextvar ){
+            printf(" %s", vp->varname);
+        }
+        printf("\n");
+        // labels
         printf("Labels =");
         for( lp = fp->labels; lp != NULL; lp = lp->nextlabel ){
             printf(" %s", lp->labelname);
         }
-        printf("\n");
+        printf("\n\n");
     }
 }
