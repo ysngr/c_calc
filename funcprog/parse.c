@@ -378,15 +378,12 @@ static void conditional_term(void)
 
 static void atom_conditional_expression(void)
 {
-    // num-expr rel-ope num-expr { rel-ope num-expr }
+    // num-expr rel-ope num-expr
     numerical_expression();
     if( is_relational_operator() == False ){
         error();
     }
     numerical_expression();
-    while( is_relational_operator() ){
-        numerical_expression();
-    }
 
     return ;
 }

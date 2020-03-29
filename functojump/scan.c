@@ -1,15 +1,10 @@
 /* scan.c */
 #include "functojump.h"
+#include "scan.h"
 
 // #define PRINTPROG
-#define KEYWORDNUM 7
 
-
-struct key{
-    int keynum;
-    char keyname[MAXSTRLEN];
-};
-static struct key ks[KEYWORDNUM] = {
+struct key ks[KEYWORDNUM] = {
     {IF_N    , "if"    },
     {ELSE_N  , "else"  },
     {WHILE_N , "while" },
@@ -25,15 +20,14 @@ int num;
 
 static FILE *fp;
 static char c;
-static struct flas{
+
+static struct flags{
     int is_ungetc_exec;
 } fs;
 
 static void initialize_flag(void);
 static void scanc(void);
 static int Ungetc(int, FILE*);
-static int is_invalid_char(void);
-static int str_to_tokennum(void);
 
 
 
@@ -92,7 +86,7 @@ int scan(void)
     int token;
 
     BEGIN_SCAN:
-    while( is_invalid_char() ){
+    while( is_invalid_char(c) ){
         scanc();
     }
 
@@ -112,7 +106,7 @@ int scan(void)
             scanc();
         }
         str[i] = '\0';
-        token = str_to_tokennum();
+        token = str_to_tokennum(str);
     }
 
     // Number
@@ -244,9 +238,9 @@ int scan(void)
 }
 
 
-static int is_invalid_char(void)
+int is_invalid_char(char ch)
 {
-    switch( c ){
+    switch( ch ){
         case '\r' :
         case '\n' :
         case '\t' :
@@ -258,11 +252,11 @@ static int is_invalid_char(void)
 }
 
 
-static int str_to_tokennum(void)
+int str_to_tokennum(char *s)
 {
     int i;
     for( i = 0; i < KEYWORDNUM; i++ ){
-        if( strcmp(ks[i].keyname, str) == 0 ){
+        if( strcmp(ks[i].keyname, s) == 0 ){
             return ks[i].keynum;
         }
     }
