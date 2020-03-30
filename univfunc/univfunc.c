@@ -5,7 +5,6 @@
 int main(void)
 {
     int a[3] = {0, 0, EMPTY};
-
     printf("is_code = %d\n", is_code(encode(a, 3)));
 
     return 0;
@@ -21,23 +20,18 @@ int pair(int x, int y)
 
 int left(int z)
 {
-    int i, j;
     int x, y;
 
     if( z == 0 ){
         return 0;
     }
 
-    x = 0;
-    for( i = 0; i < z; i++ ){
-        y = 0;
-        for( j = 0; j < z; j++ ){
+    for( x = 0; x < z; x++ ){
+        for( y = 0; y < z; y++ ){
             if( pair(x, y) == z ){
                 return x;
             }
-            y++;
         }
-        x++;
     }
 
     return 0;  // never reached
@@ -46,23 +40,18 @@ int left(int z)
 
 int right(int z)
 {
-    int i, j;
     int x, y;
 
     if( z == 0 ){
         return 0;
     }
 
-    x = 0;
-    for( i = 0; i < z; i++ ){
-        y = 0;
-        for( j = 0; j < z; j++ ){
+    for( x = 0; x < z; x++ ){
+        for( y = 0; y < z; y++ ){
             if( pair(x, y) == z ){
                 return y;
             }
-            y++;
         }
-        x++;
     }
 
     return 0;  // never reached
