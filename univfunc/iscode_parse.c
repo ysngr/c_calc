@@ -84,7 +84,7 @@ void error(char *errmsg)
             printf("%s\n", errmsg);
         }
     #endif
-    
+
     end_scan();
     longjmp(env, Error);
 
@@ -123,28 +123,26 @@ int parse(void)
 {
     init_scan();
     init_parse();
+    init_counter();
+    init_flag();
+    init_fprog_list();
 
     if( setjmp(env) != 0 ){
         return False;
     }
 
-    do{
-        init_counter();
-        init_flag();
-        init_fprog_list();
+    // prog-name formal-params '{' var-decl calc-main '}'
+    program_name();
+    fs.is_var_def = True;
+    formal_parameters();
+    is_token_or_err(LBRACE_N);
+    variable_declaration();
+    fs.is_var_def = False;
+    calc_main();
+    is_token_or_err(RBRACE_N);
+    is_token_or_err(END_OF_FILE);
 
-        // prog-name formal-params '{' var-decl calc-main '}'
-        program_name();
-        fs.is_var_def = True;
-        formal_parameters();
-        is_token_or_err(LBRACE_N);
-        variable_declaration();
-        fs.is_var_def = False;
-        calc_main();
-        is_token_or_err(RBRACE_N);
-
-        check_label_link();
-    }while( is_token_(END_OF_FILE) == False );
+    check_label_link();
 
     // print_list();  // for debug
 
