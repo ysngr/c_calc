@@ -44,19 +44,25 @@ static int dectoprog(int n)
             fprintf(fp, ", ");
         }
     }
-    fprintf(fp, ") {\n%s", indent);
+    fprintf(fp, ") {\n");
 
     // variable
-    varnum = left(n);
+    if( (varnum = left(n)) < fpnum ){
+        return halt();
+    }
+    if( varnum > fpnum ){
+        fprintf(fp, "%sint ", indent);
+    }
     n = right(n);
-    fprintf(fp, "int ");
     for( ; i <= varnum; i++ ){
         fprintf(fp, "v%d", i);
         if( i != varnum ){
             fprintf(fp, ", ");
         }
     }
-    fprintf(fp, ";\n");
+    if( varnum > fpnum ){
+        fprintf(fp, ";\n");
+    }
 
     // calc main
     for( i = 1; n != 0; i++ ){
@@ -64,6 +70,9 @@ static int dectoprog(int n)
         stat = left(n);
         n = right(n);
         switch( left(stat) ){
+            case 0 :
+                fprintf(fp, "return(v1);\n}\n");
+                break;
             case 1 :  // < 1, a >
                 if( length(right(stat)) != 1 ){
                     return halt();
@@ -113,7 +122,7 @@ static int dectoprog(int n)
                 return halt();
         }
     }
-    fprintf(fp, "%sL%d: return(v1);\n}\n", indent, i);
+    // fprintf(fp, "%sL%d: return(v1);\n}\n", indent, i);
 
     fclose(fp);
 

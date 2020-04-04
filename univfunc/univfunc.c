@@ -4,8 +4,8 @@
 
 int main(void)
 {
-    int a[3] = {0, 0, EMPTY};
-    printf("is_code = %d\n", is_code(encode(a, 3)));
+    int a[3] = {0, 1, EMPTY};
+    printf("executable(p,x) = %d\n", executable(encode(a, 3),0));
 
     return 0;
 }
@@ -14,6 +14,14 @@ int main(void)
 
 int pair(int x, int y)
 {
+    if( x == EMPTY ){
+        x = 0;
+    }
+
+    if( y == EMPTY ){
+        y = 0;
+    }
+
     return((x+y)*(x+y+1)/2 + x + 1);
 }
 
@@ -143,4 +151,20 @@ int sequence(int x, int k)
     }
 
     return a;
+}
+
+
+int executable(int p, int x)
+{
+    int k;
+
+    if( ! is_code(p) ){
+        return False;
+    }
+
+    if( left(p) == length(x) ){
+        return True;
+    }
+
+    return False;
 }

@@ -24,5 +24,6 @@ int replace(int, int, int);
 int sequence(int, int);
 
 int is_code(int);
+int executable(int, int);
 
 #endif
