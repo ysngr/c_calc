@@ -2,14 +2,14 @@
 #include "univfunc.h"
 
 
-static void *Malloc(int);
+static void *Malloc(Integer);
 
 
-static void *Malloc(int size)
+static void *Malloc(Integer size)
 {
     void *p;
 
-    if( (p = malloc(sizeof(int)*size)) == NULL ){
+    if( (p = malloc(sizeof(Integer)*size)) == NULL ){
         printf("Memory cannot be secured.\n");
         exit(EXIT_FAILURE);
     }
@@ -18,37 +18,36 @@ static void *Malloc(int size)
 }
 
 
-int comp(int p, int x)
+Integer comp(Integer p, Integer x)
 {
     int i;
-    int k, m, s, n;
-    int pc, a, b;
-    int *vs, *ss;
+    Integer k, m, s, n;
+    Integer pc, a, b;
+    Integer *vs, *ss;
 
     if( ! executable(p, x) ){
         while(True);
     }
 
-    k = element(p, 1);  // number of parameter
-    m = element(p, 2);  // number of parameter + variable
+    k = left(p);  // number of parameter
+    p = right(p);
+    m = left(p);  // number of parameter + variable
+    p = right(p);
 
-    vs = (int*)Malloc(m+1);
+    vs = (Integer*)Malloc(m+1);
     for( i = 1; i <= k; i++ ){
         vs[i] = element(x, i);
-        // printf("debug:vs[%d] = %d\n", i, vs[i]);///debug
     }
     for( ; i <= m; i++ ){
         vs[i] = 0;
-        // printf("debug:vs[%d] = 0\n", i);///debug
     }
 
-    s = element(p, 3);  // code of statements
+    s = p;  // code of statements
     n = length(s);  // number of statements
 
-    ss = (int*)Malloc(n+1);
+    ss = (Integer*)Malloc(n+1);
     for( i = 1; i <= n; i++ ){
         ss[i] = element(s, i);
-        // printf("debug:ss[%d] = %d\n", i, ss[i]);///debug
     }
 
     for( pc = 1; pc <= n; ){
