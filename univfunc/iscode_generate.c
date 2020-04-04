@@ -6,11 +6,12 @@ char filename[MAXSTRLEN] = "prog.c";
 
 static FILE *fp;
 
-static int dectoprog(int);
+static int dectoprog(Integer);
+static Integer leftright(Integer n);
 static int halt(void);
 
 
-int is_code(int n)
+int is_code(Integer n)
 {
     if( dectoprog(n) == False ){
         return False;
@@ -20,11 +21,11 @@ int is_code(int n)
 }
 
 
-static int dectoprog(int n)
+static int dectoprog(Integer n)
 {
     int i;
-    int varnum, fpnum, stat;
-    int a, b;
+    Integer varnum, fpnum, stat;
+    Integer a, b;
     char indent[5] = {' ', ' ', ' ', ' '};
 
     if( (fp = fopen(filename, "w")) == NULL ){
@@ -44,21 +45,31 @@ static int dectoprog(int n)
             fprintf(fp, ", ");
         }
     }
-    fprintf(fp, ") {\n%s", indent);
+    fprintf(fp, ") {\n");
 
     // variable
-    varnum = left(n);
+    if( (varnum = left(n)) < fpnum ){
+        return halt();
+    }
+    if( varnum > fpnum ){
+        fprintf(fp, "%sint ", indent);
+    }
     n = right(n);
-    fprintf(fp, "int ");
     for( ; i <= varnum; i++ ){
         fprintf(fp, "v%d", i);
         if( i != varnum ){
             fprintf(fp, ", ");
         }
     }
-    fprintf(fp, ";\n");
+    if( varnum > fpnum ){
+        fprintf(fp, ";\n");
+    }
 
     // calc main
+    if( left(n) == 0 ){
+        fprintf(fp, "%sL1: return(v1);\n}\n", indent);
+        return True;
+    }
     for( i = 1; n != 0; i++ ){
         fprintf(fp, "%sL%d: ", indent, i);
         stat = left(n);
@@ -69,45 +80,45 @@ static int dectoprog(int n)
                     return halt();
                 }
                 a = left(right(stat));
-                fprintf(fp, "goto L%d;\n", a);
+                fprintf(fp, "goto L%lld;\n", a);
                 break;
             case 2 :  // < 2, a, b >
                 if( length(right(stat)) != 2 ){
                     return halt();
                 }
                 a = left(right(stat));
-                b = right(right(stat));
-                fprintf(fp, "v%d = %d;\n", a, b);
+                b = leftright(right(stat));
+                fprintf(fp, "v%lld = %lld;\n", a, b);
                 break;
             case 3 :  // < 3, a, b >
                 if( length(right(stat)) != 2 ){
                     return halt();
                 }
                 a = left(right(stat));
-                b = right(right(stat));
-                fprintf(fp, "v%d = v%d;\n", a, b);
+                b = leftright(right(stat));
+                fprintf(fp, "v%lld = v%lld;\n", a, b);
                 break;
             case 4 :  // < 4, a >
                 if( length(right(stat)) != 1 ){
                     return halt();
                 }
                 a = left(right(stat));
-                fprintf(fp, "v%d++;\n", a);
+                fprintf(fp, "v%lld++;\n", a);
                 break;
             case 5 :  // < 5, a >
                 if( length(right(stat)) != 1 ){
                     return halt();
                 }
                 a = left(right(stat));
-                fprintf(fp, "v%d--\';\n", a);
+                fprintf(fp, "v%lld--\';\n", a);
                 break;
             case 6 :  // < 6, a, b >
                 if( length(right(stat)) != 2 ){
                     return halt();
                 }
                 a = left(right(stat));
-                b = right(right(stat));
-                fprintf(fp, "if( v%d > 0 ) goto L%d;\n", a, b);
+                b = leftright(right(stat));
+                fprintf(fp, "if( v%lld > 0 ) goto L%lld;\n", a, b);
                 break;
             default :
                 return halt();
@@ -118,6 +129,12 @@ static int dectoprog(int n)
     fclose(fp);
 
     return True;
+}
+
+
+static Integer leftright(Integer n)
+{
+    return left(right(n));
 }
 
 

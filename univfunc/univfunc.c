@@ -4,23 +4,22 @@
 
 int main(void)
 {
-    int a[3] = {0, 0, EMPTY};
-    printf("is_code = %d\n", is_code(encode(a, 3)));
+    printf("c = %lld\n", comp(161622373321537, 0));
 
     return 0;
 }
 
 
 
-int pair(int x, int y)
+Integer pair(Integer x, Integer y)
 {
     return((x+y)*(x+y+1)/2 + x + 1);
 }
 
 
-int left(int z)
+Integer left(Integer z)
 {
-    int x, y;
+    Integer x, y;
 
     if( z == 0 ){
         return 0;
@@ -38,9 +37,9 @@ int left(int z)
 }
 
 
-int right(int z)
+Integer right(Integer z)
 {
-    int x, y;
+    Integer x, y;
 
     if( z == 0 ){
         return 0;
@@ -58,10 +57,10 @@ int right(int z)
 }
 
 
-int encode(int *as, int n)
+Integer encode(Integer *as, Integer n)
 {
     int i;
-    int a;
+    Integer a;
 
     a = pair(as[n-1], 0);
     for( i = n-2; i >= 0; i-- ){
@@ -72,7 +71,7 @@ int encode(int *as, int n)
 }
 
 
-void decode(int a, int *as)
+void decode(Integer a, Integer *as)
 {
     int i;
 
@@ -80,15 +79,14 @@ void decode(int a, int *as)
         as[i] = left(a);
         a = right(a);
     }
-    as[i] = EMPTY;
 
     return ;
 }
 
 
-int element(int a, int i)
+Integer element(Integer a, Integer i)
 {
-    int j;
+    Integer j;
 
     for( j = 0; j < i-1; j++ ){
         a = right(a);
@@ -98,9 +96,9 @@ int element(int a, int i)
 }
 
 
-int length(int a)
+Integer length(Integer a)
 {
-    int n;
+    Integer n;
 
     if( a == 0 ){
         return 0;
@@ -114,10 +112,10 @@ int length(int a)
 }
 
 
-int replace(int a, int i, int x)
+Integer replace(Integer a, Integer i, Integer x)
 {
-    int j, k;
-    int b;
+    Integer j, k;
+    Integer b;
 
     b = 0;
     for( k = 0, j = length(a); k < length(a); k++, j-- ){
@@ -132,10 +130,10 @@ int replace(int a, int i, int x)
 }
 
 
-int sequence(int x, int k)
+Integer sequence(Integer x, Integer k)
 {
-    int i;
-    int a;
+    Integer i;
+    Integer a;
 
     a = 0;
     for( i = 0; i < k; i++ ){
@@ -143,4 +141,20 @@ int sequence(int x, int k)
     }
 
     return a;
+}
+
+
+Integer executable(Integer p, Integer x)
+{
+    Integer k;
+
+    if( ! is_code(p) ){
+        return False;
+    }
+
+    if( left(p) == length(x) ){
+        return True;
+    }
+
+    return False;
 }

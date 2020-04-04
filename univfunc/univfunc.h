@@ -9,20 +9,25 @@
 #define False 0
 
 #define MAXSEQ 32
-#define EMPTY -1
+#define EMPTY 0ull
 
-int pair(int, int);
-int left(int);
-int right(int);
+typedef unsigned long long Integer;
 
-int encode(int*, int);
-void decode(int, int*);
+Integer pair(Integer, Integer);
+Integer left(Integer);
+Integer right(Integer);
 
-int element(int, int);
-int length(int);
-int replace(int, int, int);
-int sequence(int, int);
+Integer encode(Integer*, Integer);
+void decode(Integer, Integer*);
 
-int is_code(int);
+Integer element(Integer, Integer);
+Integer length(Integer);
+Integer replace(Integer, Integer, Integer);
+Integer sequence(Integer, Integer);
+
+int is_code(Integer);
+Integer executable(Integer, Integer);
+
+Integer comp(Integer, Integer);
 
 #endif
