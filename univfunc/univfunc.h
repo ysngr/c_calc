@@ -26,4 +26,6 @@ int sequence(int, int);
 int is_code(int);
 int executable(int, int);
 
+int comp(int, int);
+
 #endif

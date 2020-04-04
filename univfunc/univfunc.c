@@ -5,7 +5,7 @@
 int main(void)
 {
     int a[3] = {0, 1, EMPTY};
-    printf("executable(p,x) = %d\n", executable(encode(a, 3),0));
+    printf("comp(p,x)=%d\n", comp(encode(a,3), 0));
 
     return 0;
 }
