@@ -21,6 +21,7 @@ static struct flags{
     int is_argument;
     int is_generate_str;
     int is_assign_right;
+    int is_var_assign;
 } fs;
 
 static struct counter{
@@ -165,6 +166,7 @@ static void initialize_flag(void)
     fs.is_argument = False;
     fs.is_generate_str = True;
     fs.is_assign_right = False;
+    fs.is_var_assign = True;
 
     return ;
 }
@@ -337,11 +339,15 @@ static int is_statement(void)
 
 static int is_val_update_statement(void)
 {
+    int i;
     char varname[MAXSTRLEN];
+    char signvar[MAXSTRLEN], rsignvar[MAXSTRLEN];
+    char labels[6][MAXSTRLEN];
 
     // var
     fs.is_generate_token = False;
     strcpy(varname, str);
+    snprintf(signvar, MAXSTRLEN, "sig_%s", varname);
     if( is_token_(NAME_N) == False ){
         fs.is_generate_token = True;
         return False;
@@ -352,30 +358,67 @@ static int is_val_update_statement(void)
         fs.is_assign_right = True;
         numerical_expression();
         fs.is_assign_right = False;
-        generate_indent_str(varname);
-        generate(ASSIGN_N);
-        generate_str(expr_r);
-        fs.is_generate_token = True;
+        generate_assign(varname, expr_r);
+        if( fs.is_var_assign ){
+            snprintf(rsignvar, MAXSTRLEN, "sig_%s", expr_r);
+            generate_assign(signvar, rsignvar);
+        }else{
+            fs.is_var_assign = True;
+            generate_assign(signvar, "1");
+        }
+    }
+    // conditional decrement statement : '--''
+    else if( is_token_(CDEC_N) ){
+        generate_cdecr(varname);
     }
     else{
-        fs.is_generate_token = True;
-        generate_indent_str(varname);
+        for( i = 0; i < 6; i++ ){
+            create_newlabel(labels[i], MAXSTRLEN);
+        }
         // increment statement : '++'
         if( is_token_(INC_N) ){
-            // do nothing
+            generate_if(signvar, labels[0]);
+            generate_goto(labels[1]);
+            generate_arrlabel(labels[0]);
+            generate_incr(varname);
+            generate_goto(labels[2]);
+            generate_arrlabel(labels[1]);
+            generate_if(varname, labels[3]);
+            generate_goto(labels[4]);
+            generate_arrlabel(labels[3]);
+            generate_cdecr(varname);
+            generate_goto(labels[5]);
+            generate_arrlabel(labels[4]);
+            generate_assign(varname, "1");
+            generate_assign(signvar, "1");
+            generate_arrlabel(labels[5]);
+            generate_arrlabel(labels[2]);
         }
         // decrement statement : '--'
-        else if( is_token_(DEC_N) ){
-            // do nothing
-        }
-        // conditional decrement statement : '--''
         else{
-            is_token_or_err(CDEC_N);
+            is_token_or_err(DEC_N);
+            generate_if(signvar, labels[0]);
+            generate_goto(labels[1]);
+            generate_arrlabel(labels[0]);
+            generate_if(varname, labels[2]);
+            generate_goto(labels[3]);
+            generate_arrlabel(labels[2]);
+            generate_cdecr(varname);
+            generate_goto(labels[4]);
+            generate_arrlabel(labels[3]);
+            generate_assign(varname, "1");
+            generate_assign(signvar, "0");
+            generate_arrlabel(labels[4]);
+            generate_goto(labels[5]);
+            generate_arrlabel(labels[1]);
+            generate_incr(varname);
+            generate_arrlabel(labels[5]);
         }
     }
 
     // ';'
     is_token_or_err(SEMI_N);
+    fs.is_generate_token = True;
 
     return True;
 }
@@ -946,6 +989,9 @@ static void atom_numerical_expression(void)
     // int-const
     if( is_token_(NUM_N) ){
         strcpy(expr_r, str);
+        if( fs.is_assign_right ){
+            fs.is_var_assign = False;
+        }
     }
 
     // otherwise
