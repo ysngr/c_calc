@@ -341,7 +341,7 @@ static int is_val_update_statement(void)
 {
     int i;
     char varname[MAXSTRLEN];
-    char signvar[MAXSTRLEN];
+    char signvar[MAXSTRLEN], rsignvar[MAXSTRLEN];
     char labels[6][MAXSTRLEN];
 
     // var
@@ -358,31 +358,20 @@ static int is_val_update_statement(void)
         fs.is_assign_right = True;
         numerical_expression();
         fs.is_assign_right = False;
-        generate_indent_str(varname);
-        generate(ASSIGN_N);
-        generate_str(expr_r);
-        generate(SEMI_N);
-        generate_indent_str(signvar);
-        generate(ASSIGN_N);
+        generate_assign(varname, expr_r);
         if( fs.is_var_assign ){
-            snprintf(signvar, MAXSTRLEN, "sig_%s", expr_r);
-            generate_str(signvar);
+            snprintf(rsignvar, MAXSTRLEN, "sig_%s", expr_r);
+            generate_assign(signvar, rsignvar);
         }else{
             fs.is_var_assign = True;
-            generate_str("1");
+            generate_assign(signvar, "1");
         }
-        fs.is_generate_token = True;
+    }
+    // conditional decrement statement : '--''
+    else if( is_token_(CDEC_N) ){
+        generate_cdecr(varname);
     }
     else{
-        // conditional decrement statement : '--''
-        if( is_token_(CDEC_N) ){
-            generate_str(varname);
-            generate(CDEC_N);
-            fs.is_generate_token = True;
-            is_token_or_err(SEMI_N);  // ';'
-            return True;
-        }
-
         for( i = 0; i < 6; i++ ){
             create_newlabel(labels[i], MAXSTRLEN);
         }
@@ -429,6 +418,7 @@ static int is_val_update_statement(void)
 
     // ';'
     is_token_or_err(SEMI_N);
+    fs.is_generate_token = True;
 
     return True;
 }
