@@ -208,6 +208,52 @@ void generate_goto(char *label)
 }
 
 
+void generate_assign(char *lv, char *rv)
+{
+    generate_indent_str(lv);
+    generate(ASSIGN_N);
+    generate_str(rv);
+    generate(SEMI_N);
+
+    return ;
+}
+
+
+void generate_incr(char *var)
+{
+    generate_indent_str(var);
+    generate(INC_N);
+    generate(SEMI_N);
+
+    return ;
+}
+
+
+void generate_cdecr(char *var)
+{
+    generate_indent_str(var);
+    generate(CDEC_N);
+    generate(SEMI_N);
+
+    return ;
+}
+
+
+void generate_if(char *var, char *label)
+{
+    generate(IF_N);
+    generate(LPAREN_N);
+    generate_str(var);
+    generate(RE_N);
+    generate_str("0");
+    generate(RPAREN_N);
+    generate_str("  ");
+    generate_goto(label);
+
+    return ;
+}
+
+
 void finalize_generator(void)
 {
     fclose(fp);

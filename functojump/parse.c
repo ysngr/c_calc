@@ -388,48 +388,42 @@ static int is_val_update_statement(void)
         }
         // increment statement : '++'
         if( is_token_(INC_N) ){
-            generate(IF_N);
-            generate(LPAREN_N);
-            generate_str(signvar);
-            generate(RE_N);
-            generate_str("0");
-            generate(RPAREN_N);
-            generate_goto(labels[0]);
+            generate_if(signvar, labels[0]);
             generate_goto(labels[1]);
             generate_arrlabel(labels[0]);
-            generate_indent_str(varname);
-            generate(INC_N);
-            generate(SEMI_N);
+            generate_incr(varname);
             generate_goto(labels[2]);
             generate_arrlabel(labels[1]);
-            generate(IF_N);
-            generate(LPAREN_N);
-            generate_str(varname);
-            generate(RE_N);
-            generate_str("0");
-            generate(RPAREN_N);
-            generate_goto(labels[3]);
+            generate_if(varname, labels[3]);
             generate_goto(labels[4]);
             generate_arrlabel(labels[3]);
-            generate_indent_str(varname);
-            generate(CDEC_N);
-            generate(SEMI_N);
+            generate_cdecr(varname);
             generate_goto(labels[5]);
             generate_arrlabel(labels[4]);
-            generate_indent_str(varname);
-            generate(ASSIGN_N);
-            generate_str("1");
-            generate(SEMI_N);
-            generate_indent_str(signvar);
-            generate(ASSIGN_N);
-            generate_str("1");
-            generate(SEMI_N);
+            generate_assign(varname, "1");
+            generate_assign(signvar, "1");
             generate_arrlabel(labels[5]);
             generate_arrlabel(labels[2]);
         }
         // decrement statement : '--'
-        else if( is_token_(DEC_N) ){
-            // do nothing
+        else{
+            is_token_or_err(DEC_N);
+            generate_if(signvar, labels[0]);
+            generate_goto(labels[1]);
+            generate_arrlabel(labels[0]);
+            generate_if(varname, labels[2]);
+            generate_goto(labels[3]);
+            generate_arrlabel(labels[2]);
+            generate_cdecr(varname);
+            generate_goto(labels[4]);
+            generate_arrlabel(labels[3]);
+            generate_assign(varname, "1");
+            generate_assign(signvar, "0");
+            generate_arrlabel(labels[4]);
+            generate_goto(labels[5]);
+            generate_arrlabel(labels[1]);
+            generate_incr(varname);
+            generate_arrlabel(labels[5]);
         }
     }
 
