@@ -1,4 +1,7 @@
 /* functojump.h */
+#ifndef FUNCTOJUMP_H
+#define FUNCTOJUMP_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -98,6 +101,11 @@ void finalize_generator(void);
 /* expand.c */
 void expand(char*, char*);
 
+/* flatten.c */
+void flaten_cond(char*, char*);
+
 
 // debug function
 void print_list(void);
+
+#endif
