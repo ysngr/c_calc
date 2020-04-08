@@ -16,11 +16,12 @@ static struct condlist{
 static struct condlist *gen_if_node(char*, char*);
 static struct condlist *gen_goto_or_arr_node(char*, int);
 static void flatten_cond(struct condlist*);
-static void flatten_paren(struct condlist*);
-static void flatten_not(struct condlist*);
-static void flatten_or(struct condlist*);
-static void flatten_and(struct condlist*);
-static void gen_flattened_stats(void);
+static struct condlist *flatten_paren(struct condlist*);
+static struct condlist *flatten_not(struct condlist*);
+static struct condlist *flatten_or(struct condlist*);
+static struct condlist *flatten_and(struct condlist*);
+static void generate_flattened_stats(void);
+static void free_condlist(struct condlist*);
 
 
 
@@ -36,7 +37,7 @@ void flatten(char *cond, char *label)
 {
     cs = gen_if_node(cond, label);
     flatten_cond(cs);
-    gen_flattened_stats();
+    generate_flattened_stats();
 
     return ;
 }
@@ -51,8 +52,8 @@ static struct condlist *gen_if_node(char *cond, char *label)
     nc = (struct condlist*)Malloc(sizeof(struct condlist));
     nc->cond = (char*)Malloc(sizeof(char)*len_cond);
     nc->label = (char*)Malloc(sizeof(char)*len_label);
-    strnncy(nc->cond, cond, len_cond);
-    strnncy(nc->label, label, len_label);
+    strncpy(nc->cond, cond, len_cond);
+    strncpy(nc->label, label, len_label);
     nc->stattype = IF_STAT;
     nc->next = NULL;
 
@@ -66,9 +67,9 @@ static struct condlist *gen_goto_or_arr_node(char *label, int stype)
     int len_label = strlen(label) + 1;
 
     nc = (struct condlist*)Malloc(sizeof(struct condlist));
-    nc->cond = NULL
+    nc->cond = NULL;
     nc->label = (char*)Malloc(sizeof(char)*len_label);
-    strnncy(nc->label, label, len_label);
+    strncpy(nc->label, label, len_label);
     nc->stattype = stype;
     nc->next = NULL;
 
@@ -78,45 +79,192 @@ static struct condlist *gen_goto_or_arr_node(char *label, int stype)
 
 static void flatten_cond(struct condlist *c)
 {
-    // TODO
+    int i;
+    struct condlist *nc;
+    struct condlist *(*flatten_func[])(struct condlist*) = {
+        flatten_paren, flatten_not, flatten_or, flatten_and
+    };
+
+    if( c == NULL ){
+        return ;
+    }
+
+    if( c->stattype == IF_STAT ){
+        for( i = 0; i < 4; i++ ){
+            if( (nc = (*flatten_func[i])(c)) != NULL ){
+                flatten_cond(nc);
+                return ;
+            }
+        }
+    }
+    flatten_cond(nc->next);
 
     return ;
 }
 
 
-static void flatten_paren(struct condlist *c)
+static struct condlist *flatten_paren(struct condlist *c)
 {
-    // TODO
+    int i, j;
+    char rm_paren_cond[MAXSTRLEN];
+    struct condlist *nc, *rm;
 
-    return ;
+    for( i = 0; c->cond[i] == ' '; i++ );  // skip space
+    if( c->cond[i] != '(' ){
+        return NULL;
+    }
+    for( j = strlen(c->cond)-1; c->cond[j] != ')'; j-- );
+    strncpy(rm_paren_cond, c->cond+i+1, j-i-1);
+    rm_paren_cond[j-i] = '\0';
+
+    // generate new node
+    nc = gen_if_node(rm_paren_cond, c->label);
+    rm = c;
+    c = nc;
+    free_condlist(rm);
+
+    return c;
 }
 
 
-static void flatten_not(struct condlist *c)
+static struct condlist *flatten_not(struct condlist *c)
 {
-    // TODO
+    int i;
+    char rm_not_cond[MAXSTRLEN];
+    char newlabel[MAXSTRLEN];
+    struct condlist *nci, *ncg, *nca;
+    struct condlist *pc;
 
-    return ;
+    for( i = 0; c->cond[i] == ' '; i++ );  // skip space
+    if( c->cond[i] != '!' ){
+        return NULL;
+    }
+    strncpy(rm_not_cond, c->cond+i+1, MAXSTRLEN);
+    create_newlabel(newlabel, MAXSTRLEN);
+
+    // generate new node
+    nci = gen_if_node(rm_not_cond, newlabel);
+    ncg = gen_goto_or_arr_node(c->label, GOTO_STAT);
+    nca = gen_goto_or_arr_node(newlabel, ARR_LABEL);
+
+    // connect
+    nci->next = ncg;
+    ncg->next = nca;
+    nca->next = c->next;
+    if( c == cs ){
+        cs = nci;
+    }else{
+        for( pc = cs; pc->next != c; pc = pc->next );
+        pc->next = nci;
+    }
+    free_condlist(c);
+
+    return nci;
 }
 
 
-static void flatten_or(struct condlist *c)
+static struct condlist *flatten_or(struct condlist *c)
 {
-    // TODO
+    int i, d;
+    int is_flatten_exec;
+    char fst_cond[MAXSTRLEN], snd_cond[MAXSTRLEN];
+    struct condlist *ncf, *ncs;
+    struct condlist *pc;
 
-    return ;
+    d = 0;
+    is_flatten_exec = False;
+    for( i = 0; c->cond[i] != '\0'; i++ ){
+        switch( c->cond[i] ){
+            case '(' : d++; break;
+            case ')' : d--; break;
+        }
+        if( d == 0 && strncmp(c->cond+i, "||", 2) == 0 ){
+            strncpy(fst_cond, c->cond, i);
+            fst_cond[i] = '\0';
+            strcpy(snd_cond, c->cond+i+2);
+            is_flatten_exec = True;
+            break;
+        }
+    }
+    if( ! is_flatten_exec ){
+        return NULL;
+    }
+
+    // generate new node
+    ncf = gen_if_node(fst_cond, c->label);
+    ncs = gen_if_node(snd_cond, c->label);
+
+    // connect
+    ncf->next = ncs;
+    ncs->next = c->next;
+    if( c == cs ){
+        cs = ncf;
+    }else{
+        for( pc = cs; pc->next != c; pc = pc->next );
+        pc->next = ncf;
+    }
+    free_condlist(c);
+
+    return ncf;
 }
 
 
-static void flatten_and(struct condlist *c)
+static struct condlist *flatten_and(struct condlist *c)
 {
-    // TODO
+    int i, d;
+    int is_flatten_exec;
+    char fst_cond[MAXSTRLEN], snd_cond[MAXSTRLEN];
+    char truelabel[MAXSTRLEN], falselabel[MAXSTRLEN];
+    struct condlist *ncif, *ncg, *ncat, *ncis, *ncaf;
+    struct condlist *pc;
 
-    return ;
+    d = 0;
+    is_flatten_exec = False;
+    for( i = 0; c->cond[i] != '\0'; i++ ){
+        switch( c->cond[i] ){
+            case '(' : d++; break;
+            case ')' : d--; break;
+        }
+        if( d == 0 && strncmp(c->cond+i, "&&", 2) == 0 ){
+            strncpy(fst_cond, c->cond, i);
+            fst_cond[i] = '\0';
+            strcpy(snd_cond, c->cond+i+2);
+            is_flatten_exec = True;
+            break;
+        }
+    }
+    if( ! is_flatten_exec ){
+        return NULL;
+    }
+    create_newlabel(truelabel, MAXSTRLEN);
+    create_newlabel(falselabel, MAXSTRLEN);
+
+    // generate new node
+    ncif = gen_if_node(fst_cond, truelabel);
+    ncg = gen_goto_or_arr_node(falselabel, GOTO_STAT);
+    ncat = gen_goto_or_arr_node(truelabel, ARR_LABEL);
+    ncis = gen_if_node(snd_cond, c->label);
+    ncaf = gen_goto_or_arr_node(falselabel, ARR_LABEL);
+
+    // connect
+    ncif->next = ncg;
+    ncg->next = ncat;
+    ncat->next = ncis;
+    ncis->next = ncaf;
+    ncaf->next = c->next;
+    if( c == cs ){
+        cs = ncif;
+    }else{
+        for( pc = cs; pc->next != c; pc = pc->next );
+        pc->next = ncif;
+    }
+    free_condlist(c);
+
+    return ncif;
 }
 
 
-static void gen_flattened_stats(void)
+static void generate_flattened_stats(void)
 {
     struct condlist *cp;
 
@@ -138,6 +286,18 @@ static void gen_flattened_stats(void)
 }
 
 
+static void free_condlist(struct condlist *p)
+{
+    if( p->cond != NULL ){
+        free(p->cond);
+    }
+    free(p->label);
+    free(p);
+
+    return ;
+}
+
+
 void finalize_condlist(void)
 {
     struct condlist *cp, *rm;
@@ -146,12 +306,7 @@ void finalize_condlist(void)
     while( cp != NULL ){
         rm = cp;
         cp = cp->next;
-        rm->next = NULL;
-        if( rm->cond != NULL ){
-            free(rm->cond);
-        }
-        free(rm->label);
-        free(rm);
+        free_condlist(rm);
     }
 
     return ;

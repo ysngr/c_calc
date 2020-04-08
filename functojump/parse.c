@@ -69,7 +69,6 @@ static void atom_numerical_expression(void);
 
 static void exprcat(char*, char*, char*, char*);
 static void create_newvariable(char*, int);
-static void create_newlabel(char*, int);
 
 
 
@@ -1025,7 +1024,7 @@ static void create_newvariable(char *var, int size)
 }
 
 
-static void create_newlabel(char *label, int size)
+void create_newlabel(char *label, int size)
 {
     snprintf(label, size, "_L%d", cnt.l++);
 

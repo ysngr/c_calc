@@ -62,6 +62,7 @@ void finalize_scan(void);
 
 /* parse.c */
 void parse(void);
+void create_newlabel(char*, int);
 
 /* register.c */
 struct arglist{
@@ -102,7 +103,7 @@ void finalize_generator(void);
 void expand(char*, char*);
 
 /* flatten.c */
-void flaten_cond(char*, char*);
+void flaten(char*, char*);
 
 
 // debug function
