@@ -1,4 +1,7 @@
 /* functojump.h */
+#ifndef FUNCTOJUMP_H
+#define FUNCTOJUMP_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -59,6 +62,7 @@ void finalize_scan(void);
 
 /* parse.c */
 void parse(void);
+void create_newlabel(char*, int);
 
 /* register.c */
 struct arglist{
@@ -98,6 +102,11 @@ void finalize_generator(void);
 /* expand.c */
 void expand(char*, char*);
 
+/* flatten.c */
+void flatten(char*, char*);
+
 
 // debug function
 void print_list(void);
+
+#endif
