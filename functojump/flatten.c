@@ -20,9 +20,11 @@ static struct condlist *flatten_paren(struct condlist*);
 static struct condlist *flatten_not(struct condlist*);
 static struct condlist *flatten_or(struct condlist*);
 static struct condlist *flatten_and(struct condlist*);
+static void flatten_re(struct condlist*);
 static void generate_flattened_stats(void);
 static void free_condlist(struct condlist*);
 
+static void print_condlist(void);
 
 
 void initialize_condlist(void)
@@ -37,6 +39,7 @@ void flatten(char *cond, char *label)
 {
     cs = gen_if_node(cond, label);
     flatten_cond(cs);
+    flatten_re(cs);
     generate_flattened_stats();
 
     return ;
@@ -97,7 +100,7 @@ static void flatten_cond(struct condlist *c)
             }
         }
     }
-    flatten_cond(nc->next);
+    flatten_cond(c->next);
 
     return ;
 }
@@ -105,25 +108,52 @@ static void flatten_cond(struct condlist *c)
 
 static struct condlist *flatten_paren(struct condlist *c)
 {
-    int i, j;
+    int i, j, d;
+    int ps, pe;
     char rm_paren_cond[MAXSTRLEN];
-    struct condlist *nc, *rm;
+    struct condlist *nc, *pc;
 
+    // find '('
     for( i = 0; c->cond[i] == ' '; i++ );  // skip space
     if( c->cond[i] != '(' ){
         return NULL;
     }
-    for( j = strlen(c->cond)-1; c->cond[j] != ')'; j-- );
-    strncpy(rm_paren_cond, c->cond+i+1, j-i-1);
-    rm_paren_cond[j-i] = '\0';
+    ps = i;
+    // find ')'
+    d = 1;
+    for( i++; c->cond[i] != '\0'; i++ ){
+        switch( c->cond[i] ){
+            case '(' : d++; break;
+            case ')' : d--; break;
+        }
+        if( d <= 0 ){
+            pe = i;
+            break;
+        }
+    }
+    for( i++; c->cond[i] != '\0'; i++ ){
+        if( c->cond[i] != ' ' ){
+            return NULL;
+        }
+    }
+    // remove most outside paren
+    strncpy(rm_paren_cond, (c->cond)+ps+1, pe-ps-1);
+    rm_paren_cond[pe-ps] = '\0';
 
     // generate new node
     nc = gen_if_node(rm_paren_cond, c->label);
-    rm = c;
-    c = nc;
-    free_condlist(rm);
 
-    return c;
+    // connect
+    nc->next = c->next;
+    if( c == cs ){
+        cs = nc;
+    }else{
+        for( pc = cs; pc->next != c; pc = pc->next );
+        pc->next = nc;
+    }
+    free_condlist(c);
+
+    return nc;
 }
 
 
@@ -178,10 +208,10 @@ static struct condlist *flatten_or(struct condlist *c)
             case '(' : d++; break;
             case ')' : d--; break;
         }
-        if( d == 0 && strncmp(c->cond+i, "||", 2) == 0 ){
+        if( d == 0 && strncmp((c->cond)+i, "||", 2) == 0 ){
             strncpy(fst_cond, c->cond, i);
             fst_cond[i] = '\0';
-            strcpy(snd_cond, c->cond+i+2);
+            strcpy(snd_cond, (c->cond)+i+2);
             is_flatten_exec = True;
             break;
         }
@@ -225,10 +255,10 @@ static struct condlist *flatten_and(struct condlist *c)
             case '(' : d++; break;
             case ')' : d--; break;
         }
-        if( d == 0 && strncmp(c->cond+i, "&&", 2) == 0 ){
+        if( d == 0 && strncmp((c->cond)+i, "&&", 2) == 0 ){
             strncpy(fst_cond, c->cond, i);
             fst_cond[i] = '\0';
-            strcpy(snd_cond, c->cond+i+2);
+            strcpy(snd_cond, (c->cond)+i+2);
             is_flatten_exec = True;
             break;
         }
@@ -261,6 +291,30 @@ static struct condlist *flatten_and(struct condlist *c)
     free_condlist(c);
 
     return ncif;
+}
+
+
+static void flatten_re(struct condlist *c)
+{
+    int i;
+
+    if( c == NULL ){
+        return ;
+    }
+
+    if( c->stattype == IF_STAT ){
+        for( i = 0; c->cond[i] != '\0'; i++ ){
+            if( c->cond[i] == '>' ){
+                while( c->cond[--i] == ' ' );
+                c->cond[i+1] = '\0';
+                break;
+            }
+        }
+    }
+
+    flatten_re(c->next);
+
+    return ;
 }
 
 
@@ -308,6 +362,27 @@ void finalize_condlist(void)
         cp = cp->next;
         free_condlist(rm);
     }
+
+    return ;
+}
+
+
+
+// debug function
+static void print_condlist(void)
+{
+    struct condlist *cp;
+
+    for( cp = cs; cp != NULL; cp = cp->next ){
+        if( cp->stattype == IF_STAT ){
+            printf("type=if : cond = %s, label = %s\n", cp->cond, cp->label);
+        }else if( cp->stattype == GOTO_STAT ){
+            printf("type=goto : label = %s\n", cp->label);
+        }else{
+            printf("type=arr : label = %s\n", cp->label);
+        }
+    }
+    printf("\n");
 
     return ;
 }

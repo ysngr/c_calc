@@ -103,7 +103,7 @@ void finalize_generator(void);
 void expand(char*, char*);
 
 /* flatten.c */
-void flaten(char*, char*);
+void flatten(char*, char*);
 
 
 // debug function
