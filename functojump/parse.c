@@ -356,6 +356,7 @@ static int is_val_update_statement(void)
     if( is_token_(ASSIGN_N) ){
         fs.is_assign_right = True;
         numerical_expression();
+        fs.is_generate_token = False;
         fs.is_assign_right = False;
         generate_assign(varname, expr_r);
         if( fs.is_var_assign ){
@@ -425,6 +426,9 @@ static int is_val_update_statement(void)
 
 static int is_if_statement(void)
 {
+    char cond[MAXSTRLEN];
+    char thenlabel[MAXSTRLEN], elselabel[MAXSTRLEN];
+
     // 'if'
     fs.is_generate_token = False;
     if( is_token_(IF_N) == False ){
@@ -436,34 +440,44 @@ static int is_if_statement(void)
     is_token_or_err(LPAREN_N);
     conditional_expression();
     is_token_or_err(RPAREN_N);
-    generate(IF_N);
-    generate(LPAREN_N);
-    generate_str(cond_expr);
-    generate(RPAREN_N);
-    fs.is_generate_token = True;
+    create_newlabel(thenlabel, MAXSTRLEN);
+    snprintf(cond, MAXSTRLEN, "!(%s)", cond_expr);
+    flatten(cond, thenlabel);
 
     // '{' stats '}' | stat
     if( is_token_(LBRACE_N) ){
         statements();
+        fs.is_generate_token = False;
         is_token_or_err(RBRACE_N);
     }else{
         generate(LBRACE_N);
         is_statement();
+        fs.is_generate_token = False;
         generate(RBRACE_N);
     }
 
     // 'else'
     if( is_token_(ELSE_N) ){
+        create_newlabel(elselabel, MAXSTRLEN);
+        generate_goto(elselabel);
+        generate_arrlabel(thenlabel);
         // '{', stats, '}' | stat
         if( is_token_(LBRACE_N) ){
             statements();
+            fs.is_generate_token = False;
             is_token_or_err(RBRACE_N);
         }else{
             generate(LBRACE_N);
             is_statement();
+            fs.is_generate_token = False;
             generate(RBRACE_N);
         }
+        generate_arrlabel(elselabel);
+    }else{  // case : else does not exist (only if)
+        generate_arrlabel(thenlabel);
     }
+
+    fs.is_generate_token = True;
 
     return True;
 }
