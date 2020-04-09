@@ -208,6 +208,21 @@ void generate_goto(char *label)
 }
 
 
+void generate_if(char *var, char *label)
+{
+    generate(IF_N);
+    generate(LPAREN_N);
+    generate_str(var);
+    generate(RE_N);
+    generate_str("0");
+    generate(RPAREN_N);
+    generate_str("  ");
+    generate_goto(label);
+
+    return ;
+}
+
+
 void generate_assign(char *lv, char *rv)
 {
     generate_indent_str(lv);
@@ -260,16 +275,64 @@ void generate_cdecr(char *var)
 }
 
 
-void generate_if(char *var, char *label)
+void generate_expand_incr(char *var)
 {
-    generate(IF_N);
-    generate(LPAREN_N);
-    generate_str(var);
-    generate(RE_N);
-    generate_str("0");
-    generate(RPAREN_N);
-    generate_str("  ");
-    generate_goto(label);
+    int i;
+    char signvar[MAXSTRLEN];
+    char labels[6][MAXSTRLEN];
+
+    snprintf(signvar, MAXSTRLEN, "sig_%s", var);
+    for( i = 0; i < 6; i++ ){
+        create_newlabel(labels[i]);
+    }
+
+    generate_if(signvar, labels[0]);
+    generate_goto(labels[1]);
+    generate_arrlabel(labels[0]);
+    generate_incr(var);
+    generate_goto(labels[2]);
+    generate_arrlabel(labels[1]);
+    generate_if(var, labels[3]);
+    generate_goto(labels[4]);
+    generate_arrlabel(labels[3]);
+    generate_cdecr(var);
+    generate_goto(labels[5]);
+    generate_arrlabel(labels[4]);
+    generate_assign_with_sign(var, "1");
+    generate_arrlabel(labels[5]);
+    generate_arrlabel(labels[2]);
+
+    return ;
+}
+
+
+void generate_expand_decr(char *var)
+{
+    int i;
+    char signvar[MAXSTRLEN];
+    char labels[6][MAXSTRLEN];
+
+    snprintf(signvar, MAXSTRLEN, "sig_%s", var);
+    for( i = 0; i < 6; i++ ){
+        create_newlabel(labels[i]);
+    }
+
+    generate_if(signvar, labels[0]);
+    generate_goto(labels[1]);
+    generate_arrlabel(labels[0]);
+    generate_if(var, labels[2]);
+    generate_goto(labels[3]);
+    generate_arrlabel(labels[2]);
+    generate_cdecr(var);
+    generate_goto(labels[4]);
+    generate_arrlabel(labels[3]);
+    generate_assign(var, "1");
+    generate_assign(signvar, "0");
+    generate_arrlabel(labels[4]);
+    generate_goto(labels[5]);
+    generate_arrlabel(labels[1]);
+    generate_incr(var);
+    generate_arrlabel(labels[5]);
 
     return ;
 }

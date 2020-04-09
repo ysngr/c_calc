@@ -172,7 +172,7 @@ static struct condlist *flatten_not(struct condlist *c)
         return NULL;
     }
     strncpy(rm_not_cond, c->cond+i+1, MAXSTRLEN);
-    create_newlabel(newlabel, MAXSTRLEN);
+    create_newlabel(newlabel);
 
     // generate new node
     nci = gen_if_node(rm_not_cond, newlabel);
@@ -268,8 +268,8 @@ static struct condlist *flatten_and(struct condlist *c)
     if( ! is_flatten_exec ){
         return NULL;
     }
-    create_newlabel(truelabel, MAXSTRLEN);
-    create_newlabel(falselabel, MAXSTRLEN);
+    create_newlabel(truelabel);
+    create_newlabel(falselabel);
 
     // generate new node
     ncif = gen_if_node(fst_cond, truelabel);

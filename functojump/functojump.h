@@ -62,7 +62,7 @@ void finalize_scan(void);
 
 /* parse.c */
 void parse(void);
-void create_newlabel(char*, int);
+void create_newlabel(char*);
 
 /* register.c */
 struct arglist{
@@ -93,11 +93,13 @@ void generate_str(char*);
 void generate_indent_str(char*);
 void generate_arrlabel(char*);
 void generate_goto(char*);
+void generate_if(char*, char*);
 void generate_assign(char*, char*);
 void generate_assign_with_sign(char*, char*);
 void generate_incr(char*);
 void generate_cdecr(char*);
-void generate_if(char*, char*);
+void generate_expand_incr(char*);
+void generate_expand_decr(char*);
 void finalize_generator(void);
 
 /* expand.c */
