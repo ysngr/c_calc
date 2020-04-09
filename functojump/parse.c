@@ -362,9 +362,7 @@ static int is_statement(void)
 static int is_val_update_statement(void)
 {
     int i;
-    int is_assign_right_number;
-    char varname[MAXSTRLEN];
-    char signvar[MAXSTRLEN], rsignvar[MAXSTRLEN];
+    char varname[MAXSTRLEN], signvar[MAXSTRLEN];
     char labels[6][MAXSTRLEN];
 
     // var
@@ -377,20 +375,7 @@ static int is_val_update_statement(void)
     // assignment statement : '=' num-expr
     if( is_token_(ASSIGN_N) ){
         numerical_expression();
-        generate_assign(varname, expr_r);
-        is_assign_right_number = True;
-        for( i = 0; i < expr_r[i] != '\0'; i++ ){
-            if( isdigit(expr_r[i]) == False ){
-                is_assign_right_number = False;
-                break;
-            }
-        }
-        if( is_assign_right_number ){
-            generate_assign(signvar, "1");
-        }else{
-            snprintf(rsignvar, MAXSTRLEN, "sig_%s", expr_r);
-            generate_assign(signvar, rsignvar);
-        }
+        generate_assign_with_sign(varname, expr_r);
     }
     // conditional decrement statement : '--''
     else if( is_token_(CDEC_N) ){
@@ -414,8 +399,7 @@ static int is_val_update_statement(void)
             generate_cdecr(varname);
             generate_goto(labels[5]);
             generate_arrlabel(labels[4]);
-            generate_assign(varname, "1");
-            generate_assign(signvar, "1");
+            generate_assign_with_sign(varname, "1");
             generate_arrlabel(labels[5]);
             generate_arrlabel(labels[2]);
         }
@@ -545,7 +529,7 @@ static int is_loop_statement(void)
     create_newvariable(var, MAXSTRLEN);
     define_variable_explicitly(var);
     numerical_expression();
-    generate_assign(var, expr_r);
+    generate_assign_with_sign(var, expr_r);
 
     create_newlabel(looplabel, MAXSTRLEN);
     create_newlabel(condlabel, MAXSTRLEN);
@@ -585,7 +569,7 @@ static int is_return_statement(void)
     is_token_or_err(RPAREN_N);
     is_token_or_err(SEMI_N);
     define_variable_explicitly(var);
-    generate_assign(var, expr_r);
+    generate_assign_with_sign(var, expr_r);
     generate_goto(label);
 
     return True;
@@ -703,14 +687,14 @@ static void atom_conditional_expression(void)
             define_variable_explicitly(var2);
 
             expand_binope("_sub", expr1, expr2, subretvar);
-            generate_assign(var1, subretvar);
+            generate_assign_with_sign(var1, subretvar);
             expand_binope("_sub", expr2, expr1, subretvar);
-            generate_assign(var2, subretvar);
+            generate_assign_with_sign(var2, subretvar);
 
             if( ope == EQUAL_N ){
-                snprintf(cond_expr, MAXSTRLEN, "(!(%s > 0)) && (!(%s > 0))", var1, var2);
+                snprintf(cond_expr, MAXSTRLEN, "((!(%s > 0)) || (!(sig_%s > 0))) && ((!(%s > 0)) || (!(sig_%s > 0)))", var1, var1, var2, var2);
             }else{
-                snprintf(cond_expr, MAXSTRLEN, "(%s > 0) || (%s > 0)", var1, var2);
+                snprintf(cond_expr, MAXSTRLEN, "((%s > 0) && (sig_%s > 0)) || ((%s > 0) && (sig_%s > 0))", var1, var1, var2, var2);
             }
             break;
         case LE_N :
@@ -725,12 +709,12 @@ static void atom_conditional_expression(void)
             }else{  // ope == LE_N || ope == LEEQ_N
                 expand_binope("_sub", expr2, expr1, subretvar);
             }
-            generate_assign(var1, subretvar);
+            generate_assign_with_sign(var1, subretvar);
 
             if( ope == LEEQ_N || ope == REEQ_N ){
                 generate_incr(var1);  // TODO : tempcode : expand var1++;
             }
-            snprintf(cond_expr, MAXSTRLEN, "%s > 0", var1);
+            snprintf(cond_expr, MAXSTRLEN, "(%s > 0) && (sig_%s > 0)", var1, var1);
             break;
     }
 
@@ -923,11 +907,8 @@ static void atom_numerical_expression(void)
             strcpy(exprstr, retvar);
             if( fs.is_argument ){
                 create_newvariable(var, MAXSTRLEN);
-                generate_indent_str(var);
                 define_variable_explicitly(var);
-                generate(ASSIGN_N);
-                generate_str(exprstr);
-                generate(SEMI_N);
+                generate_assign_with_sign(var, exprstr);
                 strcpy(expr_r, var);
             }else{
                 strcpy(expr_r, exprstr);

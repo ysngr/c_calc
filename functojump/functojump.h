@@ -94,6 +94,7 @@ void generate_indent_str(char*);
 void generate_arrlabel(char*);
 void generate_goto(char*);
 void generate_assign(char*, char*);
+void generate_assign_with_sign(char*, char*);
 void generate_incr(char*);
 void generate_cdecr(char*);
 void generate_if(char*, char*);
