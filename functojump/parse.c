@@ -67,7 +67,7 @@ static void numerical_term(void);
 static void atom_numerical_expression(void);
 
 static void exprcat(char*, char*, char*, char*);
-static void create_newvariable(char*, int);
+static void create_newvariable(char*);
 
 
 
@@ -361,13 +361,10 @@ static int is_statement(void)
 
 static int is_val_update_statement(void)
 {
-    int i;
-    char varname[MAXSTRLEN], signvar[MAXSTRLEN];
-    char labels[6][MAXSTRLEN];
+    char varname[MAXSTRLEN];
 
     // var
     strcpy(varname, str);
-    snprintf(signvar, MAXSTRLEN, "sig_%s", varname);
     if( is_token_(NAME_N) == False ){
         return False;
     }
@@ -377,52 +374,21 @@ static int is_val_update_statement(void)
         numerical_expression();
         generate_assign_with_sign(varname, expr_r);
     }
+    // increment statement : '++'
+    else if( is_token_(INC_N) ){
+        generate_expand_incr(varname);
+    }
+    // decrement statement : '--'
+    else if ( is_token_(DEC_N) ){
+        generate_expand_decr(varname);
+    }
     // conditional decrement statement : '--''
     else if( is_token_(CDEC_N) ){
         generate_cdecr(varname);
     }
+    // otherwise
     else{
-        for( i = 0; i < 6; i++ ){
-            create_newlabel(labels[i], MAXSTRLEN);  // TODO register?
-        }
-        // increment statement : '++'
-        if( is_token_(INC_N) ){  // TODO make generate function for ++,--
-            generate_if(signvar, labels[0]);
-            generate_goto(labels[1]);
-            generate_arrlabel(labels[0]);
-            generate_incr(varname);
-            generate_goto(labels[2]);
-            generate_arrlabel(labels[1]);
-            generate_if(varname, labels[3]);
-            generate_goto(labels[4]);
-            generate_arrlabel(labels[3]);
-            generate_cdecr(varname);
-            generate_goto(labels[5]);
-            generate_arrlabel(labels[4]);
-            generate_assign_with_sign(varname, "1");
-            generate_arrlabel(labels[5]);
-            generate_arrlabel(labels[2]);
-        }
-        // decrement statement : '--'
-        else{
-            is_token_or_err(DEC_N);
-            generate_if(signvar, labels[0]);
-            generate_goto(labels[1]);
-            generate_arrlabel(labels[0]);
-            generate_if(varname, labels[2]);
-            generate_goto(labels[3]);
-            generate_arrlabel(labels[2]);
-            generate_cdecr(varname);
-            generate_goto(labels[4]);
-            generate_arrlabel(labels[3]);
-            generate_assign(varname, "1");
-            generate_assign(signvar, "0");
-            generate_arrlabel(labels[4]);
-            generate_goto(labels[5]);
-            generate_arrlabel(labels[1]);
-            generate_incr(varname);
-            generate_arrlabel(labels[5]);
-        }
+        error();
     }
 
     // ';'
@@ -446,7 +412,7 @@ static int is_if_statement(void)
     is_token_or_err(LPAREN_N);
     conditional_expression();
     is_token_or_err(RPAREN_N);
-    create_newlabel(thenlabel, MAXSTRLEN);
+    create_newlabel(thenlabel);
     snprintf(cond, MAXSTRLEN, "!(%s)", cond_expr);
     flatten(cond, thenlabel);
 
@@ -460,7 +426,7 @@ static int is_if_statement(void)
 
     // 'else'
     if( is_token_(ELSE_N) ){
-        create_newlabel(elselabel, MAXSTRLEN);
+        create_newlabel(elselabel);
         generate_goto(elselabel);
         generate_arrlabel(thenlabel);
         // '{', stats, '}' | stat
@@ -488,8 +454,8 @@ static int is_while_statement(void)
     if( is_token_(WHILE_N) == False ){
         return False;
     }
-    create_newlabel(looplabel, MAXSTRLEN);
-    create_newlabel(condlabel, MAXSTRLEN);
+    create_newlabel(looplabel);
+    create_newlabel(condlabel);
     generate_arrlabel(looplabel);
 
     // '(' cond-expr ')'
@@ -526,13 +492,12 @@ static int is_loop_statement(void)
 
     // '(' num-expr ')'
     is_token_or_err(LPAREN_N);
-    create_newvariable(var, MAXSTRLEN);
-    define_variable_explicitly(var);
+    create_newvariable(var);
     numerical_expression();
     generate_assign_with_sign(var, expr_r);
 
-    create_newlabel(looplabel, MAXSTRLEN);
-    create_newlabel(condlabel, MAXSTRLEN);
+    create_newlabel(looplabel);
+    create_newlabel(condlabel);
     generate_arrlabel(looplabel);
     is_token_or_err(RPAREN_N);
     snprintf(cond, MAXSTRLEN, "!((%s > 0) && (sig_%s > 0))", var, var);
@@ -545,7 +510,7 @@ static int is_loop_statement(void)
     }else{
         is_statement();
     }
-    generate_cdecr(var);  /// TODO : tempcode : var--;
+    generate_expand_decr(var);
     generate_goto(looplabel);
     generate_arrlabel(condlabel);
 
@@ -681,10 +646,8 @@ static void atom_conditional_expression(void)
     switch( ope ){
         case EQUAL_N :
         case NOTEQ_N :
-            create_newvariable(var1, MAXSTRLEN);
-            define_variable_explicitly(var1);
-            create_newvariable(var2, MAXSTRLEN);
-            define_variable_explicitly(var2);
+            create_newvariable(var1);
+            create_newvariable(var2);
 
             expand_binope("_sub", expr1, expr2, subretvar);
             generate_assign_with_sign(var1, subretvar);
@@ -701,8 +664,7 @@ static void atom_conditional_expression(void)
         case LEEQ_N :
         case RE_N :
         case REEQ_N :
-            create_newvariable(var1, MAXSTRLEN);
-            define_variable_explicitly(var1);
+            create_newvariable(var1);
 
             if( ope == RE_N || ope == REEQ_N ){
                 expand_binope("_sub", expr1, expr2, subretvar);
@@ -712,7 +674,7 @@ static void atom_conditional_expression(void)
             generate_assign_with_sign(var1, subretvar);
 
             if( ope == LEEQ_N || ope == REEQ_N ){
-                generate_incr(var1);  // TODO : tempcode : expand var1++;
+                generate_expand_incr(var1);
             }
             snprintf(cond_expr, MAXSTRLEN, "(%s > 0) && (sig_%s > 0)", var1, var1);
             break;
@@ -906,8 +868,7 @@ static void atom_numerical_expression(void)
             expand(funcname, retvar);
             strcpy(exprstr, retvar);
             if( fs.is_argument ){
-                create_newvariable(var, MAXSTRLEN);
-                define_variable_explicitly(var);
+                create_newvariable(var);
                 generate_assign_with_sign(var, exprstr);
                 strcpy(expr_r, var);
             }else{
@@ -950,17 +911,18 @@ static void exprcat(char *expr, char *l, char *o, char *r)
 }
 
 
-static void create_newvariable(char *var, int size)
+static void create_newvariable(char *var)
 {
-    snprintf(var, size, "_v%d", cnt.v++);
+    snprintf(var, MAXSTRLEN, "_v%d", cnt.v++);
+    define_variable_explicitly(var);
 
     return ;
 }
 
 
-void create_newlabel(char *label, int size)
+void create_newlabel(char *label)
 {
-    snprintf(label, size, "_L%d", cnt.l++);
+    snprintf(label, MAXSTRLEN, "_L%d", cnt.l++);
 
     return ;
 }
