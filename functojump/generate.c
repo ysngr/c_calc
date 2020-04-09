@@ -219,6 +219,27 @@ void generate_assign(char *lv, char *rv)
 }
 
 
+void generate_assign_with_sign(char *lv, char *rv)
+{
+    int i;
+    char signlv[MAXSTRLEN], signrv[MAXSTRLEN];
+
+    generate_assign(lv, rv);
+
+    snprintf(signlv, MAXSTRLEN, "sig_%s", lv);
+    snprintf(signrv, MAXSTRLEN, "1");
+    for( i = 0; i < rv[i] != '\0'; i++ ){
+        if( isdigit(rv[i]) == False ){
+            snprintf(signrv, MAXSTRLEN, "sig_%s", rv);
+            break;
+        }
+    }
+    generate_assign(signlv, signrv);
+
+    return ;
+}
+
+
 void generate_incr(char *var)
 {
     generate_indent_str(var);

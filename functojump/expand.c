@@ -236,8 +236,13 @@ static int rescan(void)
                 fs.is_label_dep = True;
             }
             if( fs.is_register_exec ){
-                s = gen_subnode(restr);
-                strcpy(restr, s->newname);
+                if( strncmp(restr, "sig_", 4) == 0 ){
+                    s = find_subnode(restr+4);
+                    snprintf(restr, MAXSTRLEN, "sig_%s", s->newname);
+                }else{
+                    s = gen_subnode(restr);
+                    strcpy(restr, s->newname);
+                }
             }
             if( strcmp(funcname, restr) == 0 ){
                 token = FUNCNAME_N;
@@ -336,10 +341,7 @@ static void inline_function(void)
     ap = get_args();
     while( ap != NULL && sp != NULL ){
         fsetpos(fp, &tail);
-        generate_indent_str(sp->newname);
-        generate(ASSIGN_N);
-        generate_str(ap->argname);
-        generate(SEMI_N);
+        generate_assign_with_sign(sp->newname, ap->argname);
         fgetpos(fp, &tail);
         sp = sp->nextsub;
         ap = ap-> nextarg;
