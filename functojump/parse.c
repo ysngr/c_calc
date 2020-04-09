@@ -1,6 +1,8 @@
 /* parse.c */
 #include "functojump.h"
 
+#define LABEL_N 35
+
 
 static int token;
 static char expr_r[MAXSTRLEN];
@@ -15,13 +17,8 @@ static struct buffer{
 static struct flags{
     int is_var_def;
     int is_formal_parameter;
-    int is_label_dep;
     int is_token_buf_exist;
-    int is_generate_token;
     int is_argument;
-    int is_generate_str;
-    int is_assign_right;
-    int is_var_assign;
 } fs;
 
 static struct counter{
@@ -34,6 +31,8 @@ static void get_token(void);
 static void get_token_from_buf(void);
 static int is_token_(int);
 static void is_token_or_err(int);
+static int generate_is_token_(int);
+static void generate_is_token_or_err(int);
 static void error(void);
 
 static void initialize_parse(void);
@@ -99,26 +98,23 @@ static void get_token_from_buf(void)
 
 static int is_token_(int cmptoken)
 {
-    if( token != cmptoken ){
-        return False;
+    if( cmptoken == LABEL_N ){
+        if( token != NAME_N ){
+            return False;
+        }
+    }else{
+        if( token != cmptoken ){
+            return False;
+        }
     }
 
     if( cmptoken == NAME_N ){
-        // label
-        if( fs.is_label_dep ){
-            define_label();
-            fs.is_label_dep = False;
-        }
         // variable, function
-        else if( fs.is_var_def ){
+        if( fs.is_var_def ){
             define_variable(fs.is_formal_parameter);
         }else{
             reference_variable();
         }
-    }
-
-    if( fs.is_generate_token ){
-        generate(token);
     }
 
     get_token();
@@ -130,6 +126,38 @@ static int is_token_(int cmptoken)
 static void is_token_or_err(int cmptoken)
 {
     if( is_token_(cmptoken) == False ){
+        error();
+    }
+
+    return ;
+}
+
+
+static int generate_is_token_(int cmptoken)
+{
+    int prevtoken;
+    char prevstr[MAXSTRLEN];
+
+    prevtoken = token;
+    strcpy(prevstr, str);
+
+    if( is_token_(cmptoken) == False ){
+        return False;
+    }
+
+    if( prevtoken == NAME_N || prevtoken == NUM_N ){
+        generate_str(prevstr);
+    }else{
+        generate(prevtoken);
+    }
+
+    return True;
+}
+
+
+static void generate_is_token_or_err(int cmptoken)
+{
+    if( generate_is_token_(cmptoken) == False ){
         error();
     }
 
@@ -159,13 +187,8 @@ static void initialize_flag(void)
 {
     fs.is_var_def = True;
     fs.is_formal_parameter = False;
-    fs.is_label_dep = False;
     fs.is_token_buf_exist = False;
-    fs.is_generate_token = True;
     fs.is_argument = False;
-    fs.is_generate_str = True;
-    fs.is_assign_right = False;
-    fs.is_var_assign = True;
 
     return ;
 }
@@ -190,17 +213,17 @@ void parse(void)
         initialize_fprog_list();
 
         // func-name formal-params '{' var-decl calc-main '}'
-        is_token_or_err(NAME_N);
+        generate_is_token_or_err(NAME_N);
         formal_parameters();
-        is_token_or_err(LBRACE_N);
+        generate_is_token_or_err(LBRACE_N);
         variable_declaration();
         calc_main();
-        is_token_or_err(RBRACE_N);
+        generate_is_token_or_err(RBRACE_N);
 
         check_label_link();
     }while( is_token_(END_OF_FILE) == False );
 
-    print_list();  // for debug
+    // print_list();  // for debug
 
     return ;
 }
@@ -209,11 +232,11 @@ void parse(void)
 static void formal_parameters(void)
 {
     // '(' var-names ')'
-    is_token_or_err(LPAREN_N);
+    generate_is_token_or_err(LPAREN_N);
     fs.is_formal_parameter = True;
     variable_names();
     fs.is_formal_parameter = False;
-    is_token_or_err(RPAREN_N);
+    generate_is_token_or_err(RPAREN_N);
 
     return ;
 }
@@ -222,9 +245,9 @@ static void formal_parameters(void)
 static void variable_names(void)
 {
     // var { ',' var }
-    if( is_token_(NAME_N) ){
-        while( is_token_(COMMA_N) ){
-            is_token_or_err(NAME_N);
+    if( generate_is_token_(NAME_N) ){
+        while( generate_is_token_(COMMA_N) ){
+            generate_is_token_or_err(NAME_N);
         }
     }
 
@@ -235,9 +258,9 @@ static void variable_names(void)
 static void variable_declaration(void)
 {
     // 'int' var-names ';'
-    if( is_token_(INT_N) ){
+    if( generate_is_token_(INT_N) ){
         variable_names();
-        is_token_or_err(SEMI_N);
+        generate_is_token_or_err(SEMI_N);
     }
 
     return ;
@@ -339,32 +362,34 @@ static int is_statement(void)
 static int is_val_update_statement(void)
 {
     int i;
+    int is_assign_right_number;
     char varname[MAXSTRLEN];
     char signvar[MAXSTRLEN], rsignvar[MAXSTRLEN];
     char labels[6][MAXSTRLEN];
 
     // var
-    fs.is_generate_token = False;
     strcpy(varname, str);
     snprintf(signvar, MAXSTRLEN, "sig_%s", varname);
     if( is_token_(NAME_N) == False ){
-        fs.is_generate_token = True;
         return False;
     }
 
     // assignment statement : '=' num-expr
     if( is_token_(ASSIGN_N) ){
-        fs.is_assign_right = True;
         numerical_expression();
-        fs.is_generate_token = False;
-        fs.is_assign_right = False;
         generate_assign(varname, expr_r);
-        if( fs.is_var_assign ){
+        is_assign_right_number = True;
+        for( i = 0; i < expr_r[i] != '\0'; i++ ){
+            if( isdigit(expr_r[i]) == False ){
+                is_assign_right_number = False;
+                break;
+            }
+        }
+        if( is_assign_right_number ){
+            generate_assign(signvar, "1");
+        }else{
             snprintf(rsignvar, MAXSTRLEN, "sig_%s", expr_r);
             generate_assign(signvar, rsignvar);
-        }else{
-            fs.is_var_assign = True;
-            generate_assign(signvar, "1");
         }
     }
     // conditional decrement statement : '--''
@@ -373,10 +398,10 @@ static int is_val_update_statement(void)
     }
     else{
         for( i = 0; i < 6; i++ ){
-            create_newlabel(labels[i], MAXSTRLEN);
+            create_newlabel(labels[i], MAXSTRLEN);  // TODO register?
         }
         // increment statement : '++'
-        if( is_token_(INC_N) ){
+        if( is_token_(INC_N) ){  // TODO make generate function for ++,--
             generate_if(signvar, labels[0]);
             generate_goto(labels[1]);
             generate_arrlabel(labels[0]);
@@ -418,7 +443,6 @@ static int is_val_update_statement(void)
 
     // ';'
     is_token_or_err(SEMI_N);
-    fs.is_generate_token = True;
 
     return True;
 }
@@ -430,9 +454,7 @@ static int is_if_statement(void)
     char thenlabel[MAXSTRLEN], elselabel[MAXSTRLEN];
 
     // 'if'
-    fs.is_generate_token = False;
     if( is_token_(IF_N) == False ){
-        fs.is_generate_token = True;
         return False;
     }
 
@@ -447,13 +469,9 @@ static int is_if_statement(void)
     // '{' stats '}' | stat
     if( is_token_(LBRACE_N) ){
         statements();
-        fs.is_generate_token = False;
         is_token_or_err(RBRACE_N);
     }else{
-        generate(LBRACE_N);
         is_statement();
-        fs.is_generate_token = False;
-        generate(RBRACE_N);
     }
 
     // 'else'
@@ -464,20 +482,14 @@ static int is_if_statement(void)
         // '{', stats, '}' | stat
         if( is_token_(LBRACE_N) ){
             statements();
-            fs.is_generate_token = False;
             is_token_or_err(RBRACE_N);
         }else{
-            generate(LBRACE_N);
             is_statement();
-            fs.is_generate_token = False;
-            generate(RBRACE_N);
         }
         generate_arrlabel(elselabel);
     }else{  // case : else does not exist (only if)
         generate_arrlabel(thenlabel);
     }
-
-    fs.is_generate_token = True;
 
     return True;
 }
@@ -489,9 +501,7 @@ static int is_while_statement(void)
     char cond[MAXSTRLEN];
 
     // 'while'
-    fs.is_generate_token = False;
     if( is_token_(WHILE_N) == False ){
-        fs.is_generate_token = True;
         return False;
     }
     create_newlabel(looplabel, MAXSTRLEN);
@@ -508,15 +518,12 @@ static int is_while_statement(void)
     // '{' stats '}' | stat
     if( is_token_(LBRACE_N) ){
         statements();
-        fs.is_generate_token = False;
         is_token_or_err(RBRACE_N);
     }else{
         is_statement();
-        fs.is_generate_token = False;
     }
     generate_goto(looplabel);
     generate_arrlabel(condlabel);
-    fs.is_generate_token = True;
 
     return True;
 }
@@ -529,9 +536,7 @@ static int is_loop_statement(void)
     char cond[MAXSTRLEN];
 
     // 'loop'
-    fs.is_generate_token = False;
     if( is_token_(LOOP_N) == False ){
-        fs.is_generate_token = True;
         return False;
     }
 
@@ -539,10 +544,7 @@ static int is_loop_statement(void)
     is_token_or_err(LPAREN_N);
     create_newvariable(var, MAXSTRLEN);
     define_variable_explicitly(var);
-    generate_str("|");///debug
-    numerical_expression();  /// TODO:automatically generated variable !
-    generate_str("|");///debug
-    fs.is_generate_token = False;
+    numerical_expression();
     generate_assign(var, expr_r);
 
     create_newlabel(looplabel, MAXSTRLEN);
@@ -555,17 +557,13 @@ static int is_loop_statement(void)
     // '{' stats '}' | stat
     if( is_token_(LBRACE_N) ){
         statements();
-        fs.is_generate_token = False;
         is_token_or_err(RBRACE_N);
     }else{
         is_statement();
-        fs.is_generate_token = False;
     }
     generate_cdecr(var);  /// TODO : tempcode : var--;
     generate_goto(looplabel);
     generate_arrlabel(condlabel);
-
-    fs.is_generate_token = True;
 
     return True;
 }
@@ -577,25 +575,18 @@ static int is_return_statement(void)
     char label[MAXSTRLEN] = "_L";
 
     // 'return'
-    fs.is_generate_token = False;
     if( is_token_(RETURN_N) == False ){
-        fs.is_generate_token = True;
         return False;
     }
 
     // '(' num-expr ')' ';'
     is_token_or_err(LPAREN_N);
-    generate_indent_str(var);
-    define_variable_explicitly(var);
-    generate(ASSIGN_N);
-    fs.is_generate_token = True;
     numerical_expression();
-    fs.is_generate_token = False;
-    generate(SEMI_N);
-    generate_goto(label);
     is_token_or_err(RPAREN_N);
     is_token_or_err(SEMI_N);
-    fs.is_generate_token = True;
+    define_variable_explicitly(var);
+    generate_assign(var, expr_r);
+    generate_goto(label);
 
     return True;
 }
@@ -609,8 +600,8 @@ static int is_goto_statement(void)
     }
 
     // label ';'
-    fs.is_label_dep = True;
-    is_token_or_err(NAME_N);
+    generate_goto(str);
+    is_token_or_err(LABEL_N);
     is_token_or_err(SEMI_N);
 
     return True;
@@ -667,6 +658,8 @@ static void simple_conditional_expression(void)
 
 static void conditional_term(void)
 {
+    char expr[MAXSTRLEN];
+
     // '(' cond-expr ')'
     if( is_token_(LPAREN_N) ){
         conditional_expression();
@@ -675,6 +668,8 @@ static void conditional_term(void)
     // '!' cond-term
     else if( is_token_(NOT_N) ){
         conditional_term();
+        snprintf(expr, MAXSTRLEN, "!(%s)", cond_expr);
+        strcpy(cond_expr, expr);
     }
     // atom-cond-expr
     else{
@@ -690,43 +685,28 @@ static void atom_conditional_expression(void)
     int ope;
     char var1[MAXSTRLEN], var2[MAXSTRLEN];
     char expr1[MAXSTRLEN], expr2[MAXSTRLEN];
+    char subretvar[MAXSTRLEN];
 
     // num-expr rel-ope num-expr { rel-ope num-expr }
-    fs.is_generate_str = False;
     numerical_expression();
-    fs.is_generate_token = False;
     strcpy(expr1, expr_r);
     ope = relational_operator();
     numerical_expression();
-    fs.is_generate_token = False;
     strcpy(expr2, expr_r);
-    fs.is_generate_str = True;
 
     switch( ope ){
         case EQUAL_N :
         case NOTEQ_N :
             create_newvariable(var1, MAXSTRLEN);
-            generate_indent_str(var1);
             define_variable_explicitly(var1);
-            generate(ASSIGN_N);
-            generate_str("_sub");
-            generate(LPAREN_N);
-            generate_str(expr1);
-            generate(COMMA_N);
-            generate_str(expr2);
-            generate(RPAREN_N);
-            generate(SEMI_N);
             create_newvariable(var2, MAXSTRLEN);
-            generate_indent_str(var2);
             define_variable_explicitly(var2);
-            generate(ASSIGN_N);
-            generate_str("_sub");
-            generate(LPAREN_N);
-            generate_str(expr2);
-            generate(COMMA_N);
-            generate_str(expr1);
-            generate(RPAREN_N);
-            generate(SEMI_N);
+
+            expand_binope("_sub", expr1, expr2, subretvar);
+            generate_assign(var1, subretvar);
+            expand_binope("_sub", expr2, expr1, subretvar);
+            generate_assign(var2, subretvar);
+
             if( ope == EQUAL_N ){
                 snprintf(cond_expr, MAXSTRLEN, "(!(%s > 0)) && (!(%s > 0))", var1, var2);
             }else{
@@ -738,28 +718,17 @@ static void atom_conditional_expression(void)
         case RE_N :
         case REEQ_N :
             create_newvariable(var1, MAXSTRLEN);
-            generate_indent_str(var1);
             define_variable_explicitly(var1);
-            generate(ASSIGN_N);
-            generate_str("_sub");
-            generate(LPAREN_N);
+
             if( ope == RE_N || ope == REEQ_N ){
-                generate_str(expr1);
-            }else{
-                generate_str(expr2);
+                expand_binope("_sub", expr1, expr2, subretvar);
+            }else{  // ope == LE_N || ope == LEEQ_N
+                expand_binope("_sub", expr2, expr1, subretvar);
             }
-            generate(COMMA_N);
-            if( ope == RE_N || ope == REEQ_N ){
-                generate_str(expr2);
-            }else{
-                generate_str(expr1);
-            }
-            generate(RPAREN_N);
-            generate(SEMI_N);
+            generate_assign(var1, subretvar);
+
             if( ope == LEEQ_N || ope == REEQ_N ){
-                generate_indent_str(var1);
-                generate(INC_N);
-                generate(SEMI_N);
+                generate_incr(var1);  // TODO : tempcode : expand var1++;
             }
             snprintf(cond_expr, MAXSTRLEN, "%s > 0", var1);
             break;
@@ -809,8 +778,6 @@ static void numerical_expression(void)
     int is_minus_exist;
     char expr_l[MAXSTRLEN], expr_o[MAXSTRLEN], exprstr[MAXSTRLEN];
 
-    fs.is_generate_token = False;
-
     // ['-'] simple-num-expr { add-ope simple-num-ope }
     if( is_token_(MINUS_N) ){
         is_minus_exist = True;
@@ -820,30 +787,17 @@ static void numerical_expression(void)
 
     simple_numerical_expression();
     if( is_minus_exist ){
-        initialize_arglist();
-        register_arg("0");
-        register_arg(expr_r);
-        expand("_sub", expr_l);
+        expand_binope("_sub", "0", expr_r, expr_l);
     }else{
         strcpy(expr_l, expr_r);
     }
 
     while( is_additive_operator(expr_o) ){
         simple_numerical_expression();
-        initialize_arglist();
-        register_arg(expr_l);
-        register_arg(expr_r);
-        expand(expr_o, expr_l);
-        finalize_arglist(NULL);
+        expand_binope(expr_o, expr_l, expr_r, expr_l);
     }
 
     strcpy(expr_r, expr_l);
-    if( ! fs.is_argument ){
-        if( fs.is_generate_str && ! fs.is_assign_right ){
-            generate_str(expr_r);
-        }
-        fs.is_generate_token = True;
-    }
 
     return ;
 }
@@ -876,11 +830,7 @@ static void simple_numerical_expression(void)
 
     while( is_multiplicative_operator(expr_o) ){
         numerical_term();
-        initialize_arglist();
-        register_arg(expr_l);
-        register_arg(expr_r);
-        expand(expr_o, expr_l);
-        finalize_arglist(NULL);
+        expand_binope(expr_o, expr_l, expr_r, expr_l);
     }
 
     strcpy(expr_r, expr_l);
@@ -918,7 +868,6 @@ static void numerical_term(void)
     // '(' num-expr ')'
     if( is_token_(LPAREN_N) ){
         numerical_expression();
-        fs.is_generate_token = False;
         is_token_or_err(RPAREN_N);
     }
     // atom-num-expr
@@ -938,8 +887,6 @@ static void atom_numerical_expression(void)
     int is_func_in_arg;
     struct arglist *pas;
     char retvar[MAXSTRLEN];
-
-    fs.is_generate_token = False;
 
     // var | func
     if( is_token_(NAME_N) ){
@@ -997,9 +944,6 @@ static void atom_numerical_expression(void)
     // int-const
     if( is_token_(NUM_N) ){
         strcpy(expr_r, str);
-        if( fs.is_assign_right ){
-            fs.is_var_assign = False;
-        }
     }
 
     // otherwise

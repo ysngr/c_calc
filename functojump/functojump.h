@@ -101,6 +101,7 @@ void finalize_generator(void);
 
 /* expand.c */
 void expand(char*, char*);
+void expand_binope(char*, char*, char*, char*);
 
 /* flatten.c */
 void flatten(char*, char*);

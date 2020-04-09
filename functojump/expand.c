@@ -162,8 +162,20 @@ void expand(char *funcname, char *retvar)
     inline_function();
     strcpy(retvar, restr);
 
-    print_sublist();  // for debug
+    // print_sublist();  // for debug
     finalize_expand();
+
+    return ;
+}
+
+
+void expand_binope(char *funcname, char *arg_l, char *arg_r, char *retvar)
+{
+    initialize_arglist();
+    register_arg(arg_l);
+    register_arg(arg_r);
+    expand(funcname, retvar);
+    finalize_arglist(NULL);
 
     return ;
 }

@@ -102,6 +102,8 @@ static void flatten_cond(struct condlist *c)
     }
     flatten_cond(c->next);
 
+    // print_condlist();///debug
+
     return ;
 }
 
