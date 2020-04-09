@@ -463,6 +463,7 @@ static int is_if_statement(void)
     // '(' cond-expr ')'
     is_token_or_err(LPAREN_N);
     conditional_expression();
+    printf("[debug: cond=%s]\n", cond_expr);///debug
     is_token_or_err(RPAREN_N);
     create_newlabel(thenlabel, MAXSTRLEN);
     snprintf(cond, MAXSTRLEN, "!(%s)", cond_expr);
@@ -660,6 +661,8 @@ static void simple_conditional_expression(void)
 
 static void conditional_term(void)
 {
+    char expr[MAXSTRLEN];
+
     // '(' cond-expr ')'
     if( is_token_(LPAREN_N) ){
         conditional_expression();
@@ -668,6 +671,8 @@ static void conditional_term(void)
     // '!' cond-term
     else if( is_token_(NOT_N) ){
         conditional_term();
+        snprintf(expr, MAXSTRLEN, "!(%s)", cond_expr);
+        strcpy(cond_expr, expr);
     }
     // atom-cond-expr
     else{
