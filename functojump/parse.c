@@ -461,7 +461,6 @@ static int is_if_statement(void)
     // '(' cond-expr ')'
     is_token_or_err(LPAREN_N);
     conditional_expression();
-    printf("[debug: cond=%s]\n", cond_expr);///debug
     is_token_or_err(RPAREN_N);
     create_newlabel(thenlabel, MAXSTRLEN);
     snprintf(cond, MAXSTRLEN, "!(%s)", cond_expr);
@@ -703,16 +702,9 @@ static void atom_conditional_expression(void)
             create_newvariable(var2, MAXSTRLEN);
             define_variable_explicitly(var2);
 
-            initialize_arglist();
-            register_arg(expr1);
-            register_arg(expr2);
-            expand("_sub", subretvar);
+            expand_binope("_sub", expr1, expr2, subretvar);
             generate_assign(var1, subretvar);
-
-            initialize_arglist();
-            register_arg(expr2);
-            register_arg(expr1);
-            expand("_sub", subretvar);
+            expand_binope("_sub", expr2, expr1, subretvar);
             generate_assign(var2, subretvar);
 
             if( ope == EQUAL_N ){
@@ -729,18 +721,11 @@ static void atom_conditional_expression(void)
             define_variable_explicitly(var1);
 
             if( ope == RE_N || ope == REEQ_N ){
-                initialize_arglist();
-                register_arg(expr1);
-                register_arg(expr2);
-                expand("_sub", subretvar);
-                generate_assign(var1, subretvar);
+                expand_binope("_sub", expr1, expr2, subretvar);
             }else{  // ope == LE_N || ope == LEEQ_N
-                initialize_arglist();
-                register_arg(expr2);
-                register_arg(expr1);
-                expand("_sub", subretvar);
-                generate_assign(var1, subretvar);
+                expand_binope("_sub", expr2, expr1, subretvar);
             }
+            generate_assign(var1, subretvar);
 
             if( ope == LEEQ_N || ope == REEQ_N ){
                 generate_incr(var1);  // TODO : tempcode : expand var1++;
@@ -802,21 +787,14 @@ static void numerical_expression(void)
 
     simple_numerical_expression();
     if( is_minus_exist ){
-        initialize_arglist();
-        register_arg("0");
-        register_arg(expr_r);
-        expand("_sub", expr_l);
+        expand_binope("_sub", "0", expr_r, expr_l);
     }else{
         strcpy(expr_l, expr_r);
     }
 
     while( is_additive_operator(expr_o) ){
         simple_numerical_expression();
-        initialize_arglist();
-        register_arg(expr_l);
-        register_arg(expr_r);
-        expand(expr_o, expr_l);
-        finalize_arglist(NULL);
+        expand_binope(expr_o, expr_l, expr_r, expr_l);
     }
 
     strcpy(expr_r, expr_l);
@@ -852,11 +830,7 @@ static void simple_numerical_expression(void)
 
     while( is_multiplicative_operator(expr_o) ){
         numerical_term();
-        initialize_arglist();
-        register_arg(expr_l);
-        register_arg(expr_r);
-        expand(expr_o, expr_l);
-        finalize_arglist(NULL);
+        expand_binope(expr_o, expr_l, expr_r, expr_l);
     }
 
     strcpy(expr_r, expr_l);

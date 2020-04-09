@@ -169,6 +169,18 @@ void expand(char *funcname, char *retvar)
 }
 
 
+void expand_binope(char *funcname, char *arg_l, char *arg_r, char *retvar)
+{
+    initialize_arglist();
+    register_arg(arg_l);
+    register_arg(arg_r);
+    expand(funcname, retvar);
+    finalize_arglist(NULL);
+
+    return ;
+}
+
+
 static void rescanc(void)
 {
     if( fs.is_ungetc_exec ){
