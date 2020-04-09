@@ -22,6 +22,7 @@ static char token_to_str[TOKEN_NUM][MAXSTRLEN] = {
 };
 
 static void name_outputfile(char*);
+static void generate_basic_funcs(void);
 static void generate_space_before(int);
 static void generate_space_after(int);
 static void generate_indent(void);
@@ -36,10 +37,30 @@ void initialize_generator(char *inputfile)
         printf("Output file cannot be generated.\n");
         exit(EXIT_FAILURE);
     }
+
     fgetpos(fp, &head);
+    generate_basic_funcs();
 
     depth = 0;
     fs.is_gen_indent = False;
+
+    return ;
+}
+
+
+static void generate_basic_funcs(void)
+{
+    FILE *lfp;
+    char buffer[MAXSTRLEN];
+
+    if( (lfp = fopen("basicfuncs.c", "r")) == NULL ){
+        printf("Lirary file cannot be opened.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    while( fgets(buffer, MAXSTRLEN, lfp) != NULL ){
+        fprintf(fp, "%s", buffer);
+    }
 
     return ;
 }
