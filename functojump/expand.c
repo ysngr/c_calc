@@ -162,7 +162,7 @@ void expand(char *funcname, char *retvar)
     inline_function();
     strcpy(retvar, restr);
 
-    print_sublist();  // for debug
+    // print_sublist();  // for debug
     finalize_expand();
 
     return ;

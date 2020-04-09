@@ -19,7 +19,6 @@ static struct flags{
     int is_formal_parameter;
     int is_token_buf_exist;
     int is_argument;
-    int is_generate_str;
 } fs;
 
 static struct counter{
@@ -190,7 +189,6 @@ static void initialize_flag(void)
     fs.is_formal_parameter = False;
     fs.is_token_buf_exist = False;
     fs.is_argument = False;
-    fs.is_generate_str = True;
 
     return ;
 }
@@ -688,41 +686,35 @@ static void atom_conditional_expression(void)
     int ope;
     char var1[MAXSTRLEN], var2[MAXSTRLEN];
     char expr1[MAXSTRLEN], expr2[MAXSTRLEN];
+    char subretvar[MAXSTRLEN];
 
     // num-expr rel-ope num-expr { rel-ope num-expr }
-    fs.is_generate_str = False;
     numerical_expression();
     strcpy(expr1, expr_r);
     ope = relational_operator();
     numerical_expression();
     strcpy(expr2, expr_r);
-    fs.is_generate_str = True;
 
     switch( ope ){
         case EQUAL_N :
         case NOTEQ_N :
             create_newvariable(var1, MAXSTRLEN);
-            generate_indent_str(var1);
             define_variable_explicitly(var1);
-            generate(ASSIGN_N);
-            generate_str("_sub");
-            generate(LPAREN_N);
-            generate_str(expr1);
-            generate(COMMA_N);
-            generate_str(expr2);
-            generate(RPAREN_N);
-            generate(SEMI_N);
             create_newvariable(var2, MAXSTRLEN);
-            generate_indent_str(var2);
             define_variable_explicitly(var2);
-            generate(ASSIGN_N);
-            generate_str("_sub");
-            generate(LPAREN_N);
-            generate_str(expr2);
-            generate(COMMA_N);
-            generate_str(expr1);
-            generate(RPAREN_N);
-            generate(SEMI_N);
+
+            initialize_arglist();
+            register_arg(expr1);
+            register_arg(expr2);
+            expand("_sub", subretvar);
+            generate_assign(var1, subretvar);
+
+            initialize_arglist();
+            register_arg(expr2);
+            register_arg(expr1);
+            expand("_sub", subretvar);
+            generate_assign(var2, subretvar);
+
             if( ope == EQUAL_N ){
                 snprintf(cond_expr, MAXSTRLEN, "(!(%s > 0)) && (!(%s > 0))", var1, var2);
             }else{
@@ -734,28 +726,24 @@ static void atom_conditional_expression(void)
         case RE_N :
         case REEQ_N :
             create_newvariable(var1, MAXSTRLEN);
-            generate_indent_str(var1);
             define_variable_explicitly(var1);
-            generate(ASSIGN_N);
-            generate_str("_sub");
-            generate(LPAREN_N);
+
             if( ope == RE_N || ope == REEQ_N ){
-                generate_str(expr1);
-            }else{
-                generate_str(expr2);
+                initialize_arglist();
+                register_arg(expr1);
+                register_arg(expr2);
+                expand("_sub", subretvar);
+                generate_assign(var1, subretvar);
+            }else{  // ope == LE_N || ope == LEEQ_N
+                initialize_arglist();
+                register_arg(expr2);
+                register_arg(expr1);
+                expand("_sub", subretvar);
+                generate_assign(var1, subretvar);
             }
-            generate(COMMA_N);
-            if( ope == RE_N || ope == REEQ_N ){
-                generate_str(expr2);
-            }else{
-                generate_str(expr1);
-            }
-            generate(RPAREN_N);
-            generate(SEMI_N);
+
             if( ope == LEEQ_N || ope == REEQ_N ){
-                generate_indent_str(var1);
-                generate(INC_N);
-                generate(SEMI_N);
+                generate_incr(var1);  // TODO : tempcode : expand var1++;
             }
             snprintf(cond_expr, MAXSTRLEN, "%s > 0", var1);
             break;
@@ -832,11 +820,6 @@ static void numerical_expression(void)
     }
 
     strcpy(expr_r, expr_l);
-    // if( ! fs.is_argument ){
-    //     if( fs.is_generate_str && ! fs.is_assign_right ){
-    //         // generate_str(expr_r);
-    //     }
-    // }
 
     return ;
 }
