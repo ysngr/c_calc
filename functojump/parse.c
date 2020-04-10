@@ -266,13 +266,17 @@ static void variable_declaration(void)
 
 static void calc_main(void)
 {
+    char buffer[MAXSTRLEN];
+
     fs.is_var_def = False;
     statements();
 
+    get_fstvar(buffer);
     generate_arrlabel("_L");
+    generate_assign(buffer, "_r");
     generate(RETURN_N);
     generate(LPAREN_N);
-    generate_str("_r");
+    generate_str(buffer);
     generate(RPAREN_N);
     generate(SEMI_N);
 

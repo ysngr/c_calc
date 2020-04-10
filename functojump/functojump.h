@@ -88,6 +88,7 @@ void register_arg(char*);
 struct arglist* get_args(void);
 int register_repvaridx(void);
 void get_mainfuncname(char*);
+void get_fstvar(char*);
 int get_fpnum(void);
 int get_repvaridx(char*);
 int get_replabelidx(char*);

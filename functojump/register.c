@@ -413,6 +413,14 @@ int register_repvaridx(void)
 }
 
 
+void get_fstvar(char *buf)
+{
+    strcpy(buf, f->vars->varname);
+
+    return;
+}
+
+
 void get_mainfuncname(char *buf)
 {
     strcpy(buf, f->fprogname);
