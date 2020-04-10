@@ -264,7 +264,7 @@ void generate_assign_with_sign(char *lv, char *rv)
 
     snprintf(signlv, MAXSTRLEN, "sig_%s", lv);
     snprintf(signrv, MAXSTRLEN, "1");
-    for( i = 0; i < rv[i] != '\0'; i++ ){
+    for( i = 0; rv[i] != '\0'; i++ ){
         if( isdigit(rv[i]) == False ){
             snprintf(signrv, MAXSTRLEN, "sig_%s", rv);
             break;
