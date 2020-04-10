@@ -396,7 +396,6 @@ struct arglist *get_args(void)
 
 int register_repvaridx(void)
 {
-    struct fproglist *fp;
     struct varlist *vp;
     int counter;
 
@@ -411,7 +410,6 @@ int register_repvaridx(void)
 
 void register_replabelname(char *oname, char *nname)
 {
-    struct fproglist *fp;
     struct labellist *lp;
 
     for( lp = f->labels; strcmp(lp->labelname, oname) != 0; lp = lp->nextlabel );
@@ -423,8 +421,6 @@ void register_replabelname(char *oname, char *nname)
 
 void get_mainfuncname(char *buf)
 {
-    struct fproglist *fp;
-
     strcpy(buf, f->fprogname);
 
     return ;

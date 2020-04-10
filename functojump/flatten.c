@@ -110,7 +110,7 @@ static void flatten_cond(struct condlist *c)
 
 static struct condlist *flatten_paren(struct condlist *c)
 {
-    int i, j, d;
+    int i, d;
     int ps, pe;
     char rm_paren_cond[MAXSTRLEN];
     struct condlist *nc, *pc;
