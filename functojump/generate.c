@@ -224,6 +224,7 @@ void generate_goto(char *label)
     generate_str(label);
     define_label_explicitly(label);
     generate(SEMI_N);
+    increment_arrlabel_counter();
 
     return ;
 }
@@ -250,6 +251,7 @@ void generate_assign(char *lv, char *rv)
     generate(ASSIGN_N);
     generate_str(rv);
     generate(SEMI_N);
+    increment_arrlabel_counter();
 
     return ;
 }
@@ -281,6 +283,7 @@ void generate_incr(char *var)
     generate_indent_str(var);
     generate(INC_N);
     generate(SEMI_N);
+    increment_arrlabel_counter();
 
     return ;
 }
@@ -291,6 +294,7 @@ void generate_cdecr(char *var)
     generate_indent_str(var);
     generate(CDEC_N);
     generate(SEMI_N);
+    increment_arrlabel_counter();
 
     return ;
 }
@@ -381,6 +385,7 @@ void get_filenames(char *midfbuf, char *outfbuf)
             outfbuf[i] = midfile[j];
         }
     }
+    outfbuf[i] = '\0';
 
     return ;
 }

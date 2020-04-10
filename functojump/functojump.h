@@ -12,6 +12,7 @@
 #define Empty -1
 
 #define MAXSTRLEN 128
+#define MAXREPNAMELEN 10
 
 #define UNKNOWN -1
 #define END_OF_FILE 0
@@ -52,6 +53,8 @@
 #define SEMI_N 34    // ;
 #define TOKEN_NUM 35
 
+#define LABEL_N 35
+
 
 /* scan.c */
 extern char str[MAXSTRLEN];
@@ -84,9 +87,12 @@ void finalize_arglist(struct arglist*);
 void register_arg(char*);
 struct arglist* get_args(void);
 int register_repvaridx(void);
-void register_replabelname(char*, char*);
 void get_mainfuncname(char*);
+void get_fstvar(char*);
+int get_fpnum(void);
 int get_repvaridx(char*);
+int get_replabelidx(char*);
+void increment_arrlabel_counter(void);
 
 /* generate.c */
 void initialize_generator(char*);
