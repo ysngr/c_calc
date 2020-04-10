@@ -4,7 +4,7 @@
 
 static FILE *fp;
 static fpos_t head;
-static char outputfile[MAXSTRLEN];
+static char midfile[MAXSTRLEN];
 static int depth;
 
 static struct flags{
@@ -21,7 +21,7 @@ static char token_to_str[TOKEN_NUM][MAXSTRLEN] = {
     "{"     , "}"     , ","     , ":"     , ";"
 };
 
-static void name_outputfile(char*);
+static void name_midfile(char*);
 static void generate_basic_funcs(void);
 static void generate_space_before(int);
 static void generate_space_after(int);
@@ -31,9 +31,9 @@ static void generate_indent(void);
 
 void initialize_generator(char *inputfile)
 {
-    name_outputfile(inputfile);
+    name_midfile(inputfile);
 
-    if( (fp = fopen(outputfile, "w+")) == NULL ){
+    if( (fp = fopen(midfile, "w+")) == NULL ){
         printf("Output file cannot be generated.\n");
         exit(EXIT_FAILURE);
     }
@@ -78,7 +78,7 @@ fpos_t get_generate_head(void)
 }
 
 
-static void name_outputfile(char *inputfile)
+static void name_midfile(char *inputfile)
 {
     int i, j;
     char inputfiledelext[MAXSTRLEN];
@@ -94,7 +94,7 @@ static void name_outputfile(char *inputfile)
     }
     extension[j] = '\0';
 
-    snprintf(outputfile, MAXSTRLEN, "%s_jump%s", inputfiledelext, extension);
+    snprintf(midfile, MAXSTRLEN, "%s_jump_mid%s", inputfiledelext, extension);
 
     return ;
 }
@@ -362,6 +362,25 @@ void generate_expand_decr(char *var)
 void finalize_generator(void)
 {
     fclose(fp);
+
+    return ;
+}
+
+
+void get_filenames(char *midfbuf, char *outfbuf)
+{
+    int i, j;
+
+    strcpy(midfbuf, midfile);
+
+    for( i = 0, j = 0; midfile[j] != 0; i++, j++ ){  // kill "_mid"
+        if( strncmp(midfile+j, "_mid", 4) == 0 ){
+            i--;
+            j += 3;
+        }else{
+            outfbuf[i] = midfile[j];
+        }
+    }
 
     return ;
 }

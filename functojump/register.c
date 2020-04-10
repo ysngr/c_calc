@@ -1,14 +1,18 @@
 /* register.c */
 #include "functojump.h"
 
+#define MAXREPNAMELEN 10
+
 static struct varlist{
     char *varname;
+    int repvaridx;
     int is_formal_parameter;
     struct varlist *nextvar;
 } *v;
 
 static struct labellist{
     char *labelname;
+    char replabelname[MAXREPNAMELEN];///TODO
     int is_used_for_dep;
     int is_used_for_arr;
     struct labellist *nextlabel;
@@ -390,6 +394,54 @@ struct arglist *get_args(void)
 }
 
 
+int register_repvaridx(void)
+{
+    struct fproglist *fp;
+    struct varlist *vp;
+    int counter;
+
+    counter = 1;
+    for( vp = f->vars; vp != NULL; vp = vp->nextvar ){
+        vp->repvaridx = counter++;
+    }
+
+    return counter-2;
+}
+
+
+void register_replabelname(char *oname, char *nname)
+{
+    struct fproglist *fp;
+    struct labellist *lp;
+
+    for( lp = f->labels; strcmp(lp->labelname, oname) != 0; lp = lp->nextlabel );
+    strcpy(lp->replabelname, nname);
+
+    return ;
+}
+
+
+void get_mainfuncname(char *buf)
+{
+    struct fproglist *fp;
+
+    strcpy(buf, f->fprogname);
+
+    return ;
+}
+
+
+int get_repvaridx(char *oname)
+{
+    struct varlist *vp;
+
+    for( vp = f->vars; vp != NULL && strcmp(vp->varname, oname) != 0; vp = vp->nextvar );
+
+    return ( vp == NULL )? False : vp->repvaridx;
+}
+
+
+
 // debug function
 void print_list(void)
 {
@@ -403,13 +455,13 @@ void print_list(void)
         // formal parameters
         printf("Formal parameters =");
         for( vp = fp->vars; vp != NULL && vp->is_formal_parameter; vp = vp->nextvar ){
-            printf(" %s", vp->varname);
+            printf(" %s(%d)", vp->varname, vp->repvaridx);
         }
         printf("\n");
         // vars
         printf("Vars =");
         for( ; vp != NULL; vp = vp->nextvar ){
-            printf(" %s", vp->varname);
+            printf(" %s(%d)", vp->varname, vp->repvaridx);
         }
         printf("\n");
         // labels
