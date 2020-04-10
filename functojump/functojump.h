@@ -83,6 +83,10 @@ struct arglist *initialize_arglist(void);
 void finalize_arglist(struct arglist*);
 void register_arg(char*);
 struct arglist* get_args(void);
+int register_repvaridx(void);
+void register_replabelname(char*, char*);
+void get_mainfuncname(char*);
+int get_repvaridx(char*);
 
 /* generate.c */
 void initialize_generator(char*);
@@ -101,6 +105,7 @@ void generate_cdecr(char*);
 void generate_expand_incr(char*);
 void generate_expand_decr(char*);
 void finalize_generator(void);
+void get_filenames(char*, char*);
 
 /* expand.c */
 void expand(char*, char*);
@@ -108,6 +113,9 @@ void expand_binope(char*, char*, char*, char*);
 
 /* flatten.c */
 void flatten(char*, char*);
+
+/* replace.c */
+void replace(void);
 
 
 // debug function

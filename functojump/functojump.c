@@ -15,6 +15,7 @@ int main(int argc, char *argv[])
     finalize_generator();
     finalize_scan();
     printf("Valid program.\n");
+    replace();
 
     return 0;
 }
