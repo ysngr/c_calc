@@ -13,7 +13,13 @@ static int genidx;
 static char genbuf[MAXSTRLEN];
 static char ngencbuf;
 
+static int fpnum;
 static int signbase;
+static int labelcounter;
+
+static struct flags{
+    int is_generate_arrlabel;
+} fs;
 
 
 static void initialize_replace(void);
@@ -31,6 +37,7 @@ static void initialize_replace(void)
 {
     char midfile[MAXSTRLEN], outputfile[MAXSTRLEN];
 
+    fpnum = get_fpnum();
     signbase = register_repvaridx();
     get_filenames(midfile, outputfile);
 
@@ -56,14 +63,17 @@ static void initialize_rescan(void)
     get_mainfuncname(mainfuncname);
     reset_genbuf();
     ngencbuf = '\0';
+    fs.is_generate_arrlabel = False;
 
     rescanc();
     while( rescan() != NAME_N || strcmp(restr,mainfuncname) != 0 ){
         reset_genbuf();
     }
 
-    regenerate_repname();
     regenerate();
+    regenerate_repname();
+
+    labelcounter = 1;
 
     return ;
 }
@@ -80,6 +90,8 @@ static void reset_genbuf(void)
 
 void replace(void)
 {
+    int i;
+
     initialize_replace();
 
     while( True ){
@@ -88,7 +100,30 @@ void replace(void)
                 regenerate();
                 regenerate_repname();
                 break;
-            case END_OF_FILE :
+            case INT_N :
+                regenerate();
+                for( i = fpnum+1; i <= 2*signbase; i++ ){
+                    fprintf(wfp, "v%d", i);
+                    if( i != 2 * signbase ){
+                        fprintf(wfp, ", ");
+                    }else{
+                        fprintf(wfp, ";");
+                    }
+                }
+                while( rescan() != SEMI_N ){
+                    reset_genbuf();
+                }
+                break;
+            case LABEL_N :
+                for( i = strlen(genbuf)-1; genbuf[i] != '\n'; i-- );
+                genbuf[i] = '\0';
+                labelcounter--;
+                fs.is_generate_arrlabel = True;
+                regenerate();
+                break;
+            case RETURN_N :
+                regenerate();
+                fprintf(wfp, "v1);\n}\n");
                 goto EXIT;
         }
     }
@@ -113,9 +148,22 @@ static int rescan(void)
 {
     int i;
     int token;
+    char cbuf;
+    char labelbuf[MAXREPNAMELEN];
 
     while( is_invalid_char(c) ){
         rescanc();
+    }
+
+    // paste arrlabel
+    if( fs.is_generate_arrlabel ){
+        cbuf = genbuf[genidx-1];
+        genbuf[genidx-1] = '\0';
+        snprintf(labelbuf, MAXREPNAMELEN, "L%d: ", labelcounter++);
+        strcat(genbuf, labelbuf);
+        genidx += strlen(labelbuf);
+        genbuf[genidx-1] = cbuf;
+        fs.is_generate_arrlabel = False;
     }
 
     // end of file
@@ -125,7 +173,7 @@ static int rescan(void)
 
     // Name, Keyword
     else if( isalpha(c) || c == '_' ){
-        for( i = 0; isalnum(c) || c == '_'; i++ ){
+        for( i = 0; isalnum(c) || c == '_' || c == ':'; i++ ){
             restr[i] = c;
             rescanc();
         }
@@ -133,6 +181,9 @@ static int rescan(void)
         if( (token = str_to_tokennum(restr)) == NAME_N ){
             ngencbuf = genbuf[genidx-1];
             genbuf[genidx-i-1] = '\0';
+            if( restr[i-1] == ':' ){
+                token = LABEL_N;
+            }
         }
     }
 
@@ -170,8 +221,10 @@ static int rescan(void)
             case ')' : token = RPAREN_N; break;
             case '{' : token = LBRACE_N; break;
             case '}' : token = RBRACE_N; break;
-            case ':' : token = COLON_N; break;
-            case ';' : token = SEMI_N; break;
+            case ';' :
+                token = SEMI_N;
+                fs.is_generate_arrlabel = True;
+                break;
             default : token = UNKNOWN;
         }
         rescanc();
@@ -198,7 +251,7 @@ static void regenerate_repname(void)
 {
     int is_signvar;
     char varname[MAXSTRLEN];
-    int signidx;
+    int idx;
 
     if( strncmp(restr, "sig_", 4) == 0 ){
         is_signvar = True;
@@ -208,10 +261,17 @@ static void regenerate_repname(void)
         strcpy(varname, restr);
     }
 
-    if( (signidx = get_repvaridx(varname)) != False ){  // variable
-        signidx += ( is_signvar )? signbase : 0;
-        fprintf(wfp, "v%d", signidx);
-    }else{  // label
+    // variable
+    if( (idx = get_repvaridx(varname)) != False ){
+        idx += ( is_signvar )? signbase : 0;
+        fprintf(wfp, "v%d", idx);
+    }
+    // label
+    else if( (idx = get_replabelidx(varname)) != False ){
+        fprintf(wfp, "L%d", idx);
+    }
+    // otherwise
+    else{
         fprintf(wfp, "%s", restr);
     }
 

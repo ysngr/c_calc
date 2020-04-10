@@ -1,8 +1,6 @@
 /* parse.c */
 #include "functojump.h"
 
-#define LABEL_N 35
-
 
 static int token;
 static char expr_r[MAXSTRLEN];

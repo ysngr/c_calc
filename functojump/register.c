@@ -1,7 +1,8 @@
 /* register.c */
 #include "functojump.h"
 
-#define MAXREPNAMELEN 10
+
+static int arrlabel_counter;
 
 static struct varlist{
     char *varname;
@@ -12,7 +13,7 @@ static struct varlist{
 
 static struct labellist{
     char *labelname;
-    char replabelname[MAXREPNAMELEN];///TODO
+    int replabelidx;
     int is_used_for_dep;
     int is_used_for_arr;
     struct labellist *nextlabel;
@@ -76,6 +77,8 @@ void initialize_fprog_list(void)
         f->nextfprog = nf;
         f = nf;
     }
+
+    arrlabel_counter = 1;
 
     return ;
 }
@@ -277,6 +280,7 @@ void reference_label(char *label)
             exit(EXIT_FAILURE);
         }
         nl->is_used_for_arr = True;
+        nl->replabelidx = arrlabel_counter;
         return ;
     }
 
@@ -284,6 +288,7 @@ void reference_label(char *label)
     nl = (struct labellist*)Malloc(sizeof(struct labellist));
     nl->labelname = (char*)Malloc(sizeof(char)*len_str);
     strncpy(nl->labelname, label, len_str);
+    nl->replabelidx = arrlabel_counter;
     nl->is_used_for_dep = False;
     nl->is_used_for_arr = True;
     nl->nextlabel = NULL;
@@ -404,18 +409,7 @@ int register_repvaridx(void)
         vp->repvaridx = counter++;
     }
 
-    return counter-2;
-}
-
-
-void register_replabelname(char *oname, char *nname)
-{
-    struct labellist *lp;
-
-    for( lp = f->labels; strcmp(lp->labelname, oname) != 0; lp = lp->nextlabel );
-    strcpy(lp->replabelname, nname);
-
-    return ;
+    return counter-1;
 }
 
 
@@ -427,6 +421,22 @@ void get_mainfuncname(char *buf)
 }
 
 
+int get_fpnum(void)
+{
+    struct varlist *vp;
+    int fpnum;
+
+    fpnum = 0;
+    for( vp = f->vars; vp != NULL; vp = vp->nextvar ){
+        if( vp->is_formal_parameter ){
+            fpnum++;
+        }
+    }
+
+    return fpnum;
+}
+
+
 int get_repvaridx(char *oname)
 {
     struct varlist *vp;
@@ -434,6 +444,24 @@ int get_repvaridx(char *oname)
     for( vp = f->vars; vp != NULL && strcmp(vp->varname, oname) != 0; vp = vp->nextvar );
 
     return ( vp == NULL )? False : vp->repvaridx;
+}
+
+
+int get_replabelidx(char *oname)
+{
+    struct labellist *lp;
+
+    for( lp = f->labels; lp != NULL && strcmp(lp->labelname, oname) != 0; lp = lp->nextlabel );
+
+    return ( lp == NULL )? False : lp->replabelidx;
+}
+
+
+void increment_arrlabel_counter(void)
+{
+    arrlabel_counter++;
+
+    return ;
 }
 
 
