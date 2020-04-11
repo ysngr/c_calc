@@ -301,7 +301,12 @@ static int exscan(void)
             case '}' : token = RBRACE_N; break;
             case ',' : token = COMMA_N; break;
             case ':' : token = COLON_N; break;
-            case ';' : token = SEMI_N; break;
+            case ';' :
+                token = SEMI_N;
+                if( fs.is_register_exec && ! fs.is_var_def ){
+                    increment_arrlabel_counter();
+                }
+                break;
             default : token = UNKNOWN;
         }
         exscanc();

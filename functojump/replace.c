@@ -93,6 +93,7 @@ void replace(void)
     int i;
 
     initialize_replace();
+    print_list();///debug
 
     while( True ){
         switch( rescan() ){
@@ -100,6 +101,11 @@ void replace(void)
                 regenerate();
                 regenerate_repname();
                 break;
+            // case LBRACE_N :
+            //     if( rescan() != INT_N ){
+            //         strcat(genbuf+genidx, "int ");
+            //         genidx += 4;
+            //     }
             case INT_N :
                 regenerate();
                 for( i = fpnum+1; i <= 2*signbase; i++ ){

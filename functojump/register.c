@@ -30,7 +30,7 @@ static struct arglist *as;
 
 
 static int is_funcprog_declared(void);
-static int is_variable_declared(void);
+static int is_variable_declared(char*);
 static struct labellist *find_label(char*);
 
 
@@ -102,7 +102,7 @@ void define_variable(int is_formal_parameter)
 
     // variable name
     else{
-        if( is_variable_declared() ){
+        if( is_variable_declared(str) ){
             printf("\nVariable \"%s\" is duplicated.\n", str);
             exit(EXIT_FAILURE);
         }
@@ -132,7 +132,7 @@ void define_variable_explicitly(char *var)
     int len_var = strlen(var) + 1;
     struct varlist *nv;
 
-    if( is_variable_declared() ){
+    if( is_variable_declared(var) ){
         return ;
     }
 
@@ -157,7 +157,7 @@ void define_variable_explicitly(char *var)
 
 void reference_variable(void)
 {
-    if( is_variable_declared() == False ){
+    if( is_variable_declared(str) == False ){
         printf("\nVariable \"%s\" is not declared.\n", str);
         exit(EXIT_FAILURE);
     }
@@ -186,21 +186,21 @@ static int is_funcprog_declared(void)
 }
 
 
-static int is_variable_declared(void)
+static int is_variable_declared(char *name)
 {
     struct varlist *p;
     struct fproglist *fp;
 
     // variable name
     for( p = f->vars; p != NULL; p = p->nextvar ){
-        if( strcmp(p->varname, str) == 0 ){
+        if( strcmp(p->varname, name) == 0 ){
             return True;
         }
     }
 
     // function program name
     for( fp = fs; fp != NULL; fp = fp->nextfprog ){
-        if( strcmp(fp->fprogname, str) == 0 ){
+        if( strcmp(fp->fprogname, name) == 0 ){
             return True;
         }
     }
@@ -503,7 +503,7 @@ void print_list(void)
         // labels
         printf("Labels =");
         for( lp = fp->labels; lp != NULL; lp = lp->nextlabel ){
-            printf(" %s", lp->labelname);
+            printf(" %s(%d)", lp->labelname, lp->replabelidx);
         }
         printf("\n\n");
     }
