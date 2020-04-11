@@ -215,7 +215,9 @@ void define_label(void)
     struct labellist *nl;
 
     if( (nl = find_label(str)) != NULL ){
-        nl->is_used_for_dep = True;
+        if( ! nl->is_used_for_dep && nl->is_used_for_arr ){
+            nl->is_used_for_dep = True;
+        }
         return ;
     }
 
@@ -245,7 +247,9 @@ void define_label_explicitly(char *label)
     struct labellist *nl;
 
     if( (nl = find_label(label)) != NULL ){
-        nl->is_used_for_dep = True;
+        if( ! nl->is_used_for_dep && nl->is_used_for_arr ){
+            nl->is_used_for_dep = True;
+        }
         return ;
     }
 

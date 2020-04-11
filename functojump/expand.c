@@ -101,8 +101,8 @@ static struct sublist *gen_subnode(char *oname)
 {
     struct sublist *ns, *sp;
     int len_name;
-    static int v = 0;
-    static int l = 0;
+    static int v = 1;
+    static int l = 1;
 
     if( (sp = find_subnode(oname)) != NULL ){  // node already exists
         if( strncmp(sp->newname, "__L", 3) == 0 ){
@@ -134,7 +134,6 @@ static struct sublist *gen_subnode(char *oname)
         snprintf(ns->newname, MAXNEWNAME, "__L%d", l++);
         if( fs.is_label_dep ){
             define_label_explicitly(ns->newname);
-            fs.is_label_dep = False;
         }else{
             reference_label(ns->newname);
         }
@@ -209,9 +208,9 @@ static void exungetc(char c)
 static int exscan(void)
 {
     int i;
-    int token;
+    int prevtoken;
+    static int token = UNKNOWN;
     struct sublist *s;
-    static int prevtoken = UNKNOWN;
 
     if( fs.is_exscan_buf_exist ){
         fs.is_exscan_buf_exist = False;
@@ -223,6 +222,8 @@ static int exscan(void)
     while( is_invalid_char(c) ){
         exscanc();
     }
+
+    prevtoken = token;
 
     // Name, Keyword
     if( isalpha(c) || c == '_'){
@@ -244,6 +245,7 @@ static int exscan(void)
                     strcpy(exstr, s->newname);
                 }
             }
+            fs.is_label_dep = False;
             if( strcmp(funcname, exstr) == 0 ){
                 token = FUNCNAME_N;
             }
@@ -304,8 +306,6 @@ static int exscan(void)
         }
         exscanc();
     }
-
-    prevtoken = token;
 
     return token;
 }
