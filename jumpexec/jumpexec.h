@@ -19,5 +19,7 @@ void initialize_scan(char*);
 int scan(void);
 void finalize_scan(void);
 
+/* parse.c */
+void parse(void);
 
 #endif
