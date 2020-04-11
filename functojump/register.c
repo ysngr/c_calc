@@ -1,14 +1,19 @@
 /* register.c */
 #include "functojump.h"
 
+
+static int arrlabel_counter;
+
 static struct varlist{
     char *varname;
+    int repvaridx;
     int is_formal_parameter;
     struct varlist *nextvar;
 } *v;
 
 static struct labellist{
     char *labelname;
+    int replabelidx;
     int is_used_for_dep;
     int is_used_for_arr;
     struct labellist *nextlabel;
@@ -72,6 +77,8 @@ void initialize_fprog_list(void)
         f->nextfprog = nf;
         f = nf;
     }
+
+    arrlabel_counter = 1;
 
     return ;
 }
@@ -273,6 +280,7 @@ void reference_label(char *label)
             exit(EXIT_FAILURE);
         }
         nl->is_used_for_arr = True;
+        nl->replabelidx = arrlabel_counter;
         return ;
     }
 
@@ -280,6 +288,7 @@ void reference_label(char *label)
     nl = (struct labellist*)Malloc(sizeof(struct labellist));
     nl->labelname = (char*)Malloc(sizeof(char)*len_str);
     strncpy(nl->labelname, label, len_str);
+    nl->replabelidx = arrlabel_counter;
     nl->is_used_for_dep = False;
     nl->is_used_for_arr = True;
     nl->nextlabel = NULL;
@@ -390,6 +399,81 @@ struct arglist *get_args(void)
 }
 
 
+int register_repvaridx(void)
+{
+    struct varlist *vp;
+    int counter;
+
+    counter = 1;
+    for( vp = f->vars; vp != NULL; vp = vp->nextvar ){
+        vp->repvaridx = counter++;
+    }
+
+    return counter-1;
+}
+
+
+void get_fstvar(char *buf)
+{
+    strcpy(buf, f->vars->varname);
+
+    return;
+}
+
+
+void get_mainfuncname(char *buf)
+{
+    strcpy(buf, f->fprogname);
+
+    return ;
+}
+
+
+int get_fpnum(void)
+{
+    struct varlist *vp;
+    int fpnum;
+
+    fpnum = 0;
+    for( vp = f->vars; vp != NULL; vp = vp->nextvar ){
+        if( vp->is_formal_parameter ){
+            fpnum++;
+        }
+    }
+
+    return fpnum;
+}
+
+
+int get_repvaridx(char *oname)
+{
+    struct varlist *vp;
+
+    for( vp = f->vars; vp != NULL && strcmp(vp->varname, oname) != 0; vp = vp->nextvar );
+
+    return ( vp == NULL )? False : vp->repvaridx;
+}
+
+
+int get_replabelidx(char *oname)
+{
+    struct labellist *lp;
+
+    for( lp = f->labels; lp != NULL && strcmp(lp->labelname, oname) != 0; lp = lp->nextlabel );
+
+    return ( lp == NULL )? False : lp->replabelidx;
+}
+
+
+void increment_arrlabel_counter(void)
+{
+    arrlabel_counter++;
+
+    return ;
+}
+
+
+
 // debug function
 void print_list(void)
 {
@@ -403,13 +487,13 @@ void print_list(void)
         // formal parameters
         printf("Formal parameters =");
         for( vp = fp->vars; vp != NULL && vp->is_formal_parameter; vp = vp->nextvar ){
-            printf(" %s", vp->varname);
+            printf(" %s(%d)", vp->varname, vp->repvaridx);
         }
         printf("\n");
         // vars
         printf("Vars =");
         for( ; vp != NULL; vp = vp->nextvar ){
-            printf(" %s", vp->varname);
+            printf(" %s(%d)", vp->varname, vp->repvaridx);
         }
         printf("\n");
         // labels

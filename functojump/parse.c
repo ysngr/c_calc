@@ -1,8 +1,6 @@
 /* parse.c */
 #include "functojump.h"
 
-#define LABEL_N 35
-
 
 static int token;
 static char expr_r[MAXSTRLEN];
@@ -66,7 +64,6 @@ static int is_multiplicative_operator(char*);
 static void numerical_term(void);
 static void atom_numerical_expression(void);
 
-static void exprcat(char*, char*, char*, char*);
 static void create_newvariable(char*);
 
 
@@ -269,13 +266,17 @@ static void variable_declaration(void)
 
 static void calc_main(void)
 {
+    char buffer[MAXSTRLEN];
+
     fs.is_var_def = False;
     statements();
 
+    get_fstvar(buffer);
     generate_arrlabel("_L");
+    generate_assign(buffer, "_r");
     generate(RETURN_N);
     generate(LPAREN_N);
-    generate_str("_r");
+    generate_str(buffer);
     generate(RPAREN_N);
     generate(SEMI_N);
 
@@ -722,7 +723,7 @@ static int relational_operator(void)
 static void numerical_expression(void)
 {
     int is_minus_exist;
-    char expr_l[MAXSTRLEN], expr_o[MAXSTRLEN], exprstr[MAXSTRLEN];
+    char expr_l[MAXSTRLEN], expr_o[MAXSTRLEN];
 
     // ['-'] simple-num-expr { add-ope simple-num-ope }
     if( is_token_(MINUS_N) ){
@@ -768,7 +769,7 @@ static int is_additive_operator(char *expr_o)
 
 static void simple_numerical_expression(void)
 {
-    char expr_l[MAXSTRLEN], expr_o[MAXSTRLEN], exprstr[MAXSTRLEN];
+    char expr_l[MAXSTRLEN], expr_o[MAXSTRLEN];
 
     // num-term { mul-ope num-term }
     numerical_term();
@@ -809,8 +810,6 @@ static int is_multiplicative_operator(char *expr_o)
 
 static void numerical_term(void)
 {
-    char exprstr[MAXSTRLEN];
-
     // '(' num-expr ')'
     if( is_token_(LPAREN_N) ){
         numerical_expression();
@@ -892,20 +891,6 @@ static void atom_numerical_expression(void)
     else{
         error();
     }
-
-    return ;
-}
-
-
-static void exprcat(char *expr, char *l, char *o, char *r)
-{
-    // str <- o(l,r)
-    snprintf(expr, MAXSTRLEN, "%s(%s, %s)", o, l, r);
-
-    // initialize
-    memset(l, '\0', MAXSTRLEN);
-    memset(o, '\0', MAXSTRLEN);
-    memset(r, '\0', MAXSTRLEN);
 
     return ;
 }

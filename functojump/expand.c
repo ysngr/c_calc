@@ -12,15 +12,15 @@ static char funcname[MAXSTRLEN];
 static int fpnum;
 
 static char c, uc;
-static char restr[MAXSTRLEN];
-static int renum;
+static char exstr[MAXSTRLEN];
+static int exnum;
 
 static struct flags{
     int is_register_exec;
     int is_formal_parameter;
     int is_var_def;
     int is_label_dep;
-    int is_rescan_buf_exist;
+    int is_exscan_buf_exist;
     int is_ungetc_exec;
 } fs;
 
@@ -34,16 +34,16 @@ static struct buffer{
     int nexttoken;
     int nextnum;
     char nextstr[MAXSTRLEN];
-} rsbuf;
+} esbuf;
 
 
 static void initialize_expand(char*);
 static void initialize_flag(void);
 static struct sublist *find_subnode(char*);
 static struct sublist *gen_subnode(char*);
-static void rescanc(void);
-static int rescan(void);
-static void reungetc(char);
+static void exscanc(void);
+static int exscan(void);
+static void exungetc(char);
 static void inline_function(void);
 static void finalize_expand(void);
 
@@ -64,7 +64,7 @@ static void initialize_expand(char *fname)
     initialize_flag();
     ss = NULL;
 
-    rescanc();
+    exscanc();
 
     return ;
 }
@@ -76,7 +76,7 @@ static void initialize_flag(void)
     fs.is_formal_parameter = False;
     fs.is_var_def = True;
     fs.is_label_dep = False;
-    fs.is_rescan_buf_exist = False;
+    fs.is_exscan_buf_exist = False;
     fs.is_ungetc_exec = False;
 
     return ;
@@ -156,11 +156,11 @@ void expand(char *funcname, char *retvar)
 {
     initialize_expand(funcname);
 
-    while( rescan() != FUNCNAME_N );
+    while( exscan() != FUNCNAME_N );
 
     fs.is_register_exec = True;
     inline_function();
-    strcpy(retvar, restr);
+    strcpy(retvar, exstr);
 
     // print_sublist();  // for debug
     finalize_expand();
@@ -181,7 +181,7 @@ void expand_binope(char *funcname, char *arg_l, char *arg_r, char *retvar)
 }
 
 
-static void rescanc(void)
+static void exscanc(void)
 {
     if( fs.is_ungetc_exec ){
         fs.is_ungetc_exec = False;
@@ -197,7 +197,7 @@ static void rescanc(void)
 }
 
 
-static void reungetc(char c)
+static void exungetc(char c)
 {
     uc = c;
     fs.is_ungetc_exec = True;
@@ -206,45 +206,45 @@ static void reungetc(char c)
 }
 
 
-static int rescan(void)
+static int exscan(void)
 {
     int i;
     int token;
     struct sublist *s;
     static int prevtoken = UNKNOWN;
 
-    if( fs.is_rescan_buf_exist ){
-        fs.is_rescan_buf_exist = False;
-        renum = rsbuf.nextnum;
-        strcpy(restr, rsbuf.nextstr);
-        return rsbuf.nexttoken;
+    if( fs.is_exscan_buf_exist ){
+        fs.is_exscan_buf_exist = False;
+        exnum = esbuf.nextnum;
+        strcpy(exstr, esbuf.nextstr);
+        return esbuf.nexttoken;
     }
 
     while( is_invalid_char(c) ){
-        rescanc();
+        exscanc();
     }
 
     // Name, Keyword
     if( isalpha(c) || c == '_'){
         for( i = 0; isalnum(c) || c == '_'; i++ ){
-            restr[i] = c;
-            rescanc();
+            exstr[i] = c;
+            exscanc();
         }
-        restr[i] = '\0';
-        if( (token = str_to_tokennum(restr)) == NAME_N ){
+        exstr[i] = '\0';
+        if( (token = str_to_tokennum(exstr)) == NAME_N ){
             if( prevtoken == GOTO_N ){
                 fs.is_label_dep = True;
             }
             if( fs.is_register_exec ){
-                if( strncmp(restr, "sig_", 4) == 0 ){
-                    s = find_subnode(restr+4);
-                    snprintf(restr, MAXSTRLEN, "sig_%s", s->newname);
+                if( strncmp(exstr, "sig_", 4) == 0 ){
+                    s = find_subnode(exstr+4);
+                    snprintf(exstr, MAXSTRLEN, "sig_%s", s->newname);
                 }else{
-                    s = gen_subnode(restr);
-                    strcpy(restr, s->newname);
+                    s = gen_subnode(exstr);
+                    strcpy(exstr, s->newname);
                 }
             }
-            if( strcmp(funcname, restr) == 0 ){
+            if( strcmp(funcname, exstr) == 0 ){
                 token = FUNCNAME_N;
             }
         }
@@ -252,11 +252,11 @@ static int rescan(void)
 
     // Number
     else if( isdigit(c) ){
-        renum = 0;
+        exnum = 0;
         for( i = 0; isdigit(c); i++ ){
-            renum = 10 * renum + (c - '0');
-            snprintf(restr+i, 2, "%c", c);
-            rescanc();
+            exnum = 10 * exnum + (c - '0');
+            snprintf(exstr+i, 2, "%c", c);
+            exscanc();
         }
         token = NUM_N;
     }
@@ -265,18 +265,18 @@ static int rescan(void)
     else{
         switch( c ){
             case '+' :
-                rescanc();
+                exscanc();
                 token = ( c == '+' )? INC_N : UNKNOWN;
                 break;
             case '-' :
-                rescanc();
+                exscanc();
                 if( c == '-' ){
-                    rescanc();
+                    exscanc();
                     if( c == '\'' ){
                         token = CDEC_N;
                     }else{
                         token = DEC_N;
-                        reungetc(c);
+                        exungetc(c);
                     }
                     break;
                 }else{
@@ -286,11 +286,11 @@ static int rescan(void)
             case '=' : token = ASSIGN_N; break;
             case '>' : token = RE_N; break;
             case '&' :
-                rescanc();
+                exscanc();
                 token = ( c == '&' )? AND_N : UNKNOWN;
                 break;
             case '|' :
-                rescanc();
+                exscanc();
                 token = ( c == '|' )? OR_N : UNKNOWN;
                 break;
             case '(' : token = LPAREN_N; break;
@@ -302,7 +302,7 @@ static int rescan(void)
             case ';' : token = SEMI_N; break;
             default : token = UNKNOWN;
         }
-        rescanc();
+        exscanc();
     }
 
     prevtoken = token;
@@ -321,15 +321,15 @@ static void inline_function(void)
 
     // skip formal parameter and variable declaration
     fs.is_formal_parameter = True;
-    while( rescan() != LBRACE_N );
+    while( exscan() != LBRACE_N );
     fs.is_formal_parameter = False;
-    if( (token = rescan()) == INT_N ){
-        while( rescan() != SEMI_N );
+    if( (token = exscan()) == INT_N ){
+        while( exscan() != SEMI_N );
     }else{
-        rsbuf.nexttoken = token;
-        rsbuf.nextnum = renum;
-        strcpy(rsbuf.nextstr, restr);
-        fs.is_rescan_buf_exist = True;
+        esbuf.nexttoken = token;
+        esbuf.nextnum = exnum;
+        strcpy(esbuf.nextstr, exstr);
+        fs.is_exscan_buf_exist = True;
     }
     fs.is_var_def = False;
 
@@ -353,14 +353,14 @@ static void inline_function(void)
     }
 
     // generate until return comes
-    while( (token = rescan()) != RETURN_N ){
-        strcpy(str, restr);
+    while( (token = exscan()) != RETURN_N ){
+        strcpy(str, exstr);
         fsetpos(fp, &tail);
         generate(token);
         fgetpos(fp, &tail);
     }
-    rescan();  // skip '('
-    rescan();  // store retvar to restr
+    exscan();  // skip '('
+    exscan();  // store retvar to exstr
     fsetpos(fp, &tail);
 
     strcpy(str, strreg);  // restore str
