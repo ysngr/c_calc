@@ -9,6 +9,7 @@
 
 #define True 1
 #define False 0
+#define Empty -1
 
 #define MAXSTRLEN 128
 
@@ -21,5 +22,9 @@ void finalize_scan(void);
 
 /* parse.c */
 void parse(void);
+
+/* register.c */
+void register_variable(int, int);
+void register_statement(int, int, int);
 
 #endif
