@@ -93,7 +93,6 @@ void replace(void)
     int i;
 
     initialize_replace();
-    print_list();///debug
 
     while( True ){
         switch( rescan() ){
@@ -101,11 +100,12 @@ void replace(void)
                 regenerate();
                 regenerate_repname();
                 break;
-            // case LBRACE_N :
-            //     if( rescan() != INT_N ){
-            //         strcat(genbuf+genidx, "int ");
-            //         genidx += 4;
-            //     }
+            case LBRACE_N :
+                if( rescan() != INT_N ){
+                    strcat(genbuf+genidx-1, "int ");
+                    genidx += 5;
+                    genbuf[genidx] = '\0';
+                }
             case INT_N :
                 regenerate();
                 for( i = fpnum+1; i <= 2*signbase; i++ ){
@@ -187,6 +187,7 @@ static int rescan(void)
         if( (token = str_to_tokennum(restr)) == NAME_N ){
             ngencbuf = genbuf[genidx-1];
             genbuf[genidx-i-1] = '\0';
+            genidx -= i + 1;
             if( restr[i-1] == ':' ){
                 token = LABEL_N;
             }
