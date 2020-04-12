@@ -42,6 +42,7 @@
 #define INCR_STAT 4
 #define CDECR_STAT 5
 #define IF_GOTO_STAT 6
+#define RETURN_STAT 7
 
 
 /* scan.c */
@@ -56,5 +57,10 @@ void parse(void);
 /* register.c */
 void register_variable(int, int);
 void register_statement(int, int, int);
+void register_paramvalue(int*, int);
+void update_variable(int, int);
+
+// debug function
+void print_statlist(void);
 
 #endif

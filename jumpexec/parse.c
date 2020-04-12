@@ -444,6 +444,11 @@ static int is_goto_statement(void)
     fs.is_label_dep = True;
     labelname();
     is_token_or_err(SEMI_N);
+    if( s.stype == IF_GOTO_STAT ){
+        s.b = labelidx;
+    }else{
+        s.a = labelidx;
+    }
 
     return True;
 }
@@ -460,6 +465,8 @@ static int return_statement(void)
     }
     is_token_or_err(RPAREN_N);
     is_token_or_err(SEMI_N);
+
+    register_statement(RETURN_STAT, Empty, Empty);
 
     return True;
 }
