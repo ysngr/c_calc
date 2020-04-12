@@ -62,3 +62,66 @@ void register_statement(int st, int a, int b)
 
     return ;
 }
+
+
+void register_paramvalue(int *vs, int pnum)
+{
+    int i;
+    struct varlist *vp;
+
+    for( vp = vs, i = 1; i < pnum; vp = vp->nextvar, i++ ){
+        vp->val = vs[i-1];
+    }
+
+    return ;
+}
+
+
+void update_variable(int varidx, int value)
+{
+    int i;
+    struct statlist *sp;
+
+    for( sp = ss, i = 1; i < varidx; sp = sp->nextvar, i++ );
+    sp->val = value;
+
+    return ;
+}
+
+
+
+void print_statlist(void)
+{
+    int counter;
+    struct statlist *sp;
+
+    counter = 1;
+    for( sp = ss; sp != NULL; sp = sp->nextstat ){
+        printf("%03d: [%d] ", counter++, sp->stype);
+        switch( sp->stype ){
+            case GOTO_STAT :
+                printf("goto L%d;\n", sp->a);
+                break;
+            case NAT_ASSIGN_STAT :
+                printf("v%d = %d;\n", sp->a, sp->b);
+                break;
+            case VAR_ASSIGN_STAT :
+                printf("v%d = v%d;\n", sp->a, sp->b);
+                break;
+            case INCR_STAT :
+                printf("v%d++;\n", sp->a);
+                break;
+            case CDECR_STAT :
+                printf("v%d--\';\n", sp->a);
+                break;
+            case IF_GOTO_STAT :
+                printf("if(v%d > 0) goto L%d;\n", sp->a, sp->b);
+                break;
+            case RETURN_STAT :
+                printf("return(v1);\n");
+                break;
+        }
+    }
+
+    return ;
+}
