@@ -4,8 +4,8 @@ CC = gcc
 CFLAGS = -Wall
 OBJS = jumpexec.h jumpexec.o scan.o parse.o register.o
 
-functojump : ${OBJS}
+jumpexec : ${OBJS}
 	gcc -o $@ ${OBJS}
 
 clean :
-	${RM} *.o functojump
+	${RM} *.o jumpexec

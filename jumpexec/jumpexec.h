@@ -56,9 +56,9 @@ int parse(char*);
 
 /* register.c */
 void initialize_register(void);
-void register_variable(int, int);
+void register_variable(int);
 void register_statement(int, int, int);
-void register_paramvalue(int*, int);
+void register_paramvalue(int, int*);
 void update_variable(int, int);
 void finalize_register(void);
 

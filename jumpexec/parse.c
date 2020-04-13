@@ -31,7 +31,7 @@ static int is_token_(int);
 static void is_token_or_err(int);
 static void error(void);
 
-static void initialize_parse(void);
+static void initialize_parse(char*);
 static void initialize_counter(void);
 static void initialize_flag(void);
 static void initialize_statreg(void);
@@ -43,7 +43,6 @@ static void variable_declaration(void);
 static void label(void);
 static void labelname(void);
 
-static void program_name(void);
 static int formal_parameters(void);
 static void calc_main(void);
 static void statements(void);
@@ -115,7 +114,7 @@ static void error(void)
 
 static void initialize_parse(char *filename)
 {
-    initializeialize_scan(filename);
+    initialize_scan(filename);
     initialize_register();
 
     initialize_counter();
@@ -165,7 +164,7 @@ int parse(char *filename)
     initialize_parse(filename);
 
     // prog-name formal-params '{' var-decl calc-main '}'
-    program_name();
+    is_token_or_err(NAME_N);
     fs.is_var_def = True;
     fpnum = formal_parameters();
     is_token_or_err(LBRACE_N);
@@ -175,7 +174,7 @@ int parse(char *filename)
     is_token_or_err(RBRACE_N);
     is_token_or_err(END_OF_FILE);
 
-    check_label_link();
+    // check_label_link();
 
     finalize_scan();
 
@@ -226,9 +225,6 @@ static int is_variable(void)
         if( ++cnt.v != atoi(varnum) ){
             error();
         }
-        define_variable();
-    }else{
-        reference_variable();
     }
 
     get_token();
@@ -278,26 +274,13 @@ static void labelname(void)
     }
 
     labelidx = atoi(str+1);
-    if( fs.is_label_dep ){
-        generate_label();
-        fs.is_label_dep = False;
-    }else{
+    if( ! fs.is_label_dep ){
         if( ++cnt.l != labelidx ){
             error();
         }
-        paste_label(str);
     }
 
     get_token();
-
-    return ;
-}
-
-
-static void program_name(void)
-{
-    is_token_or_err(NAME_N);
-    define_variable();
 
     return ;
 }
@@ -446,6 +429,7 @@ static int is_goto_statement(void)
     // label ';'
     fs.is_label_dep = True;
     labelname();
+    fs.is_label_dep = False;
     is_token_or_err(SEMI_N);
     if( s.stype == IF_GOTO_STAT ){
         s.b = labelidx;

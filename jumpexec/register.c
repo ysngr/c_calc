@@ -27,7 +27,7 @@ void initialize_register(void)
 void register_variable(int varnum)
 {
     int i;
-    struct varlist *nv, *vp
+    struct varlist *nv, *vp;
 
     for( i = 0; i < varnum; i++ ){
         if( (nv = (struct varlist*)malloc(sizeof(struct varlist))) == NULL ){
@@ -37,7 +37,7 @@ void register_variable(int varnum)
         nv->val = 0;
         nv->nextvar = NULL;
 
-        if( vs = NULL ){
+        if( vs == NULL ){
             vs = nv;
         }else{
             for( vp = vs; vp->nextvar != NULL; vp = vp->nextvar );
@@ -73,13 +73,13 @@ void register_statement(int st, int a, int b)
 }
 
 
-void register_paramvalue(int *vs, int pnum)
+void register_paramvalue(int pnum, int *values)
 {
     int i;
     struct varlist *vp;
 
     for( vp = vs, i = 1; i < pnum; vp = vp->nextvar, i++ ){
-        vp->val = vs[i-1];
+        vp->val = values[i-1];
     }
 
     return ;
@@ -89,10 +89,10 @@ void register_paramvalue(int *vs, int pnum)
 void update_variable(int varidx, int value)
 {
     int i;
-    struct statlist *sp;
+    struct varlist *vp;
 
-    for( sp = ss, i = 1; i < varidx; sp = sp->nextvar, i++ );
-    sp->val = value;
+    for( vp = vs, i = 1; i < varidx; vp = vp->nextvar, i++ );
+    vp->val = value;
 
     return ;
 }

@@ -39,6 +39,10 @@ static void scanc(void)
 
 int scan(void)
 {
+    int i;
+    int token;
+
+    BEGIN_SCAN:
     while( is_invalid_char() ){
         scanc();
     }
