@@ -140,7 +140,23 @@ void get_statement(int pc, int *reg)
 
 void finalize_register(void)
 {
-    // TODO : free
+    struct varlist *vp;
+    struct statlist *sp;
+    void *rm;
+
+    vp = vs;
+    while( vp != NULL ){
+        rm = vp;
+        vp = vp->nextvar;
+        free(rm);
+    }
+
+    sp = ss;
+    while( sp != NULL ){
+        rm = sp;
+        sp = sp->nextstat;
+        free(rm);
+    }
 
     return ;
 }
