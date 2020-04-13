@@ -31,7 +31,7 @@ static int is_token_(int);
 static void is_token_or_err(int);
 static void error(void);
 
-static void initialize_parse(char*);
+static void initialize_parse(void);
 static void initialize_counter(void);
 static void initialize_flag(void);
 static void initialize_statreg(void);
@@ -112,11 +112,8 @@ static void error(void)
 }
 
 
-static void initialize_parse(char *filename)
+static void initialize_parse(void)
 {
-    initialize_scan(filename);
-    initialize_register();
-
     initialize_counter();
     initialize_flag();
     get_token();
@@ -157,11 +154,11 @@ static void initialize_statreg(void)
 }
 
 
-int parse(char *filename)
+int parse(void)
 {
     int fpnum;
 
-    initialize_parse(filename);
+    initialize_parse();
 
     // prog-name formal-params '{' var-decl calc-main '}'
     is_token_or_err(NAME_N);
@@ -174,9 +171,7 @@ int parse(char *filename)
     is_token_or_err(RBRACE_N);
     is_token_or_err(END_OF_FILE);
 
-    // check_label_link();
-
-    finalize_scan();
+    check_label_link();
 
     return fpnum;
 }
@@ -303,7 +298,7 @@ static int formal_parameters(void)
 
 static void variable_declaration(void)
 {
-    int varnum;
+    int varnum = 0;
 
     // 'int' var-names ';'
     if( is_token_(INT_N) ){
