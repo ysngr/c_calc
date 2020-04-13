@@ -15,7 +15,16 @@ static struct statlist{
 
 
 
-void register_variable(int varnum, int is_parameter)
+void initialize_register(void)
+{
+    vs = NULL;
+    ss = NULL;
+
+    return ;
+}
+
+
+void register_variable(int varnum)
 {
     int i;
     struct varlist *nv, *vp
@@ -28,7 +37,7 @@ void register_variable(int varnum, int is_parameter)
         nv->val = 0;
         nv->nextvar = NULL;
 
-        if( i == 0 && is_parameter ){
+        if( vs = NULL ){
             vs = nv;
         }else{
             for( vp = vs; vp->nextvar != NULL; vp = vp->nextvar );
@@ -89,7 +98,16 @@ void update_variable(int varidx, int value)
 }
 
 
+void finalize_register(void)
+{
+    // TODO : free
 
+    return ;
+}
+
+
+
+// debug function
 void print_statlist(void)
 {
     int counter;

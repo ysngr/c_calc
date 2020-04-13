@@ -31,10 +31,10 @@ static int is_token_(int);
 static void is_token_or_err(int);
 static void error(void);
 
-static void init_parse(void);
-static void init_counter(void);
-static void init_statreg(void);
-static void init_flag(void);
+static void initialize_parse(void);
+static void initialize_counter(void);
+static void initialize_flag(void);
+static void initialize_statreg(void);
 
 static int variable_names(void);
 static int is_variable(void);
@@ -44,7 +44,7 @@ static void label(void);
 static void labelname(void);
 
 static void program_name(void);
-static void formal_parameters(void);
+static int formal_parameters(void);
 static void calc_main(void);
 static void statements(void);
 static int is_statement(void);
@@ -113,16 +113,20 @@ static void error(void)
 }
 
 
-static void init_parse(void)
+static void initialize_parse(char *filename)
 {
-    init_register();
+    initializeialize_scan(filename);
+    initialize_register();
+
+    initialize_counter();
+    initialize_flag();
     get_token();
 
     return ;
 }
 
 
-static void init_counter(void)
+static void initialize_counter(void)
 {
     cnt.v = 0;
     cnt.l = 0;
@@ -131,7 +135,16 @@ static void init_counter(void)
 }
 
 
-static void init_statreg(void)
+static void initialize_flag(void)
+{
+    fs.is_var_def = True;
+    fs.is_label_dep = False;
+
+    return ;
+}
+
+
+static void initialize_statreg(void)
 {
     s.stype = Empty;
     s.a = Empty;
@@ -145,26 +158,16 @@ static void init_statreg(void)
 }
 
 
-static void init_flag(void)
+int parse(char *filename)
 {
-    fs.is_var_def = True;
-    fs.is_label_dep = False;
+    int fpnum;
 
-    return ;
-}
-
-
-void parse(void)
-{
-    init_parse();
-    init_counter();
-    init_flag();
-    init_fprog_list();
+    initialize_parse(filename);
 
     // prog-name formal-params '{' var-decl calc-main '}'
     program_name();
     fs.is_var_def = True;
-    formal_parameters();
+    fpnum = formal_parameters();
     is_token_or_err(LBRACE_N);
     variable_declaration();
     fs.is_var_def = False;
@@ -174,9 +177,9 @@ void parse(void)
 
     check_label_link();
 
-    print_list();  // for debug
+    finalize_scan();
 
-    return ;
+    return fpnum;
 }
 
 
@@ -300,7 +303,7 @@ static void program_name(void)
 }
 
 
-static void formal_parameters(void)
+static int formal_parameters(void)
 {
     int fpnum;
 
@@ -309,9 +312,9 @@ static void formal_parameters(void)
     fpnum = variable_names();
     is_token_or_err(RPAREN_N);
 
-    register_variable(fpnum, True);
+    register_variable(fpnum);
 
-    return ;
+    return fpnum;
 }
 
 
@@ -325,7 +328,7 @@ static void variable_declaration(void)
         is_token_or_err(SEMI_N);
     }
 
-    register_variable(varnum, False);
+    register_variable(varnum);
 
     return ;
 }
@@ -353,7 +356,7 @@ static void statements(void)
 
 static int is_statement(void)
 {
-    init_statreg();
+    initialize_statreg();
 
     if( is_val_update_statement() || is_if_statement() || is_goto_statement() ){
         register_statement(s.stype, s.a, s.b);

@@ -52,13 +52,15 @@ int scan(void);
 void finalize_scan(void);
 
 /* parse.c */
-void parse(void);
+int parse(char*);
 
 /* register.c */
+void initialize_register(void);
 void register_variable(int, int);
 void register_statement(int, int, int);
 void register_paramvalue(int*, int);
 void update_variable(int, int);
+void finalize_register(void);
 
 // debug function
 void print_statlist(void);
