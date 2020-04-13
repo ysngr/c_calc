@@ -1,13 +1,11 @@
 /* parse.c */
 #include "jumpexec.h"
 
-
 static int token;
 
 static int labelidx;
 static int varidx;
 static int num;
-
 
 static struct counter{
     int v;

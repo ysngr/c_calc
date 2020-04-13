@@ -3,9 +3,7 @@
 
 #define KEYWORDNUM 4
 
-
 char str[MAXSTRLEN];
-
 
 static FILE *fp;
 static char c;

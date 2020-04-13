@@ -162,8 +162,7 @@ void finalize_register(void)
 }
 
 
-
-void print_variables(void)  // debug function
+void print_variables(void)
 {
     int varidx;
     struct varlist *vp;

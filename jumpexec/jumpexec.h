@@ -72,5 +72,4 @@ void print_variables(void);
 /* execute.c */
 int execute(int, char*[]);
 
-
 #endif

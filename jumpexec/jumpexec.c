@@ -13,8 +13,8 @@ int main(int argc, char *argv[])
     }
 
     initialize(argv[1]);
-    
-    if( parse() != argc - 2 ){
+
+    if( parse() != argc-2 ){
         printf("Invalid number of arguments.\n");
         return -1;
     }
