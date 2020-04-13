@@ -1,6 +1,8 @@
 /* register.c */
 #include "jumpexec.h"
 
+static int statnum;
+
 static struct varlist{
     int val;
     struct varlist *nextvar;
@@ -15,10 +17,20 @@ static struct statlist{
 
 
 
-void register_variable(int varnum, int is_parameter)
+void initialize_register(void)
+{
+    statnum = 0;
+    vs = NULL;
+    ss = NULL;
+
+    return ;
+}
+
+
+void register_variable(int varnum)
 {
     int i;
-    struct varlist *nv, *vp
+    struct varlist *nv, *vp;
 
     for( i = 0; i < varnum; i++ ){
         if( (nv = (struct varlist*)malloc(sizeof(struct varlist))) == NULL ){
@@ -28,7 +40,7 @@ void register_variable(int varnum, int is_parameter)
         nv->val = 0;
         nv->nextvar = NULL;
 
-        if( i == 0 && is_parameter ){
+        if( vs == NULL ){
             vs = nv;
         }else{
             for( vp = vs; vp->nextvar != NULL; vp = vp->nextvar );
@@ -60,68 +72,109 @@ void register_statement(int st, int a, int b)
         sp->nextstat = ns;
     }
 
+    statnum++;
+
     return ;
 }
 
 
-void register_paramvalue(int *vs, int pnum)
+void check_label_link(void)
+{
+    struct statlist *sp;
+
+    for( sp = ss; sp != NULL; sp = sp->nextstat ){
+        switch( sp->stype ){
+            case GOTO_STAT :
+                if( sp->a > statnum ){
+                    printf("Invalid label:L%d.\n", sp->a);
+                    exit(EXIT_FAILURE);
+                }
+            case IF_GOTO_STAT :
+                if( sp->b > statnum ){
+                    printf("Invalid label:L%d.\n", sp->b);
+                    exit(EXIT_FAILURE);
+                }
+        }
+    }
+
+    return ;
+}
+
+
+void set_variable(int varidx, int value)
 {
     int i;
     struct varlist *vp;
 
-    for( vp = vs, i = 1; i < pnum; vp = vp->nextvar, i++ ){
-        vp->val = vs[i-1];
-    }
+    for( vp = vs, i = 1; i < varidx; vp = vp->nextvar, i++ );
+    vp->val = value;
 
     return ;
 }
 
 
-void update_variable(int varidx, int value)
+int get_variable(int varidx)
+{
+    int i;
+    struct varlist *vp;
+
+    for( vp = vs, i = 1; i < varidx; vp = vp->nextvar, i++ );
+
+    return vp->val;
+}
+
+
+void get_statement(int pc, int *reg)
 {
     int i;
     struct statlist *sp;
 
-    for( sp = ss, i = 1; i < varidx; sp = sp->nextvar, i++ );
-    sp->val = value;
+    for( sp = ss, i = 1; i < pc; sp = sp->nextstat, i++ );
+    reg[STATELEM_STYPE] = sp->stype;
+    reg[STATELEM_A] = sp->a;
+    reg[STATELEM_B] = sp->b;
 
     return ;
 }
 
 
-
-void print_statlist(void)
+void finalize_register(void)
 {
-    int counter;
+    struct varlist *vp;
     struct statlist *sp;
+    void *rm;
 
-    counter = 1;
-    for( sp = ss; sp != NULL; sp = sp->nextstat ){
-        printf("%03d: [%d] ", counter++, sp->stype);
-        switch( sp->stype ){
-            case GOTO_STAT :
-                printf("goto L%d;\n", sp->a);
-                break;
-            case NAT_ASSIGN_STAT :
-                printf("v%d = %d;\n", sp->a, sp->b);
-                break;
-            case VAR_ASSIGN_STAT :
-                printf("v%d = v%d;\n", sp->a, sp->b);
-                break;
-            case INCR_STAT :
-                printf("v%d++;\n", sp->a);
-                break;
-            case CDECR_STAT :
-                printf("v%d--\';\n", sp->a);
-                break;
-            case IF_GOTO_STAT :
-                printf("if(v%d > 0) goto L%d;\n", sp->a, sp->b);
-                break;
-            case RETURN_STAT :
-                printf("return(v1);\n");
-                break;
+    vp = vs;
+    while( vp != NULL ){
+        rm = vp;
+        vp = vp->nextvar;
+        free(rm);
+    }
+
+    sp = ss;
+    while( sp != NULL ){
+        rm = sp;
+        sp = sp->nextstat;
+        free(rm);
+    }
+
+    return ;
+}
+
+
+void print_variables(void)
+{
+    int varidx;
+    struct varlist *vp;
+
+    varidx = 1;
+    for( vp = vs; vp != NULL; vp = vp->nextvar ){
+        printf("v%d = %d", varidx++, vp->val);
+        if( vp->nextvar != NULL ){
+            printf(", ");
         }
     }
+    printf("\n");
 
     return ;
 }

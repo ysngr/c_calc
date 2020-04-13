@@ -1,13 +1,11 @@
 /* parse.c */
 #include "jumpexec.h"
 
-
 static int token;
 
 static int labelidx;
 static int varidx;
 static int num;
-
 
 static struct counter{
     int v;
@@ -31,10 +29,10 @@ static int is_token_(int);
 static void is_token_or_err(int);
 static void error(void);
 
-static void init_parse(void);
-static void init_counter(void);
-static void init_statreg(void);
-static void init_flag(void);
+static void initialize_parse(void);
+static void initialize_counter(void);
+static void initialize_flag(void);
+static void initialize_statreg(void);
 
 static int variable_names(void);
 static int is_variable(void);
@@ -43,8 +41,7 @@ static void variable_declaration(void);
 static void label(void);
 static void labelname(void);
 
-static void program_name(void);
-static void formal_parameters(void);
+static int formal_parameters(void);
 static void calc_main(void);
 static void statements(void);
 static int is_statement(void);
@@ -113,16 +110,17 @@ static void error(void)
 }
 
 
-static void init_parse(void)
+static void initialize_parse(void)
 {
-    init_register();
+    initialize_counter();
+    initialize_flag();
     get_token();
 
     return ;
 }
 
 
-static void init_counter(void)
+static void initialize_counter(void)
 {
     cnt.v = 0;
     cnt.l = 0;
@@ -131,7 +129,16 @@ static void init_counter(void)
 }
 
 
-static void init_statreg(void)
+static void initialize_flag(void)
+{
+    fs.is_var_def = True;
+    fs.is_label_dep = False;
+
+    return ;
+}
+
+
+static void initialize_statreg(void)
 {
     s.stype = Empty;
     s.a = Empty;
@@ -145,26 +152,16 @@ static void init_statreg(void)
 }
 
 
-static void init_flag(void)
+int parse(void)
 {
-    fs.is_var_def = True;
-    fs.is_label_dep = False;
+    int fpnum;
 
-    return ;
-}
-
-
-void parse(void)
-{
-    init_parse();
-    init_counter();
-    init_flag();
-    init_fprog_list();
+    initialize_parse();
 
     // prog-name formal-params '{' var-decl calc-main '}'
-    program_name();
+    is_token_or_err(NAME_N);
     fs.is_var_def = True;
-    formal_parameters();
+    fpnum = formal_parameters();
     is_token_or_err(LBRACE_N);
     variable_declaration();
     fs.is_var_def = False;
@@ -174,9 +171,7 @@ void parse(void)
 
     check_label_link();
 
-    print_list();  // for debug
-
-    return ;
+    return fpnum;
 }
 
 
@@ -223,9 +218,6 @@ static int is_variable(void)
         if( ++cnt.v != atoi(varnum) ){
             error();
         }
-        define_variable();
-    }else{
-        reference_variable();
     }
 
     get_token();
@@ -275,14 +267,10 @@ static void labelname(void)
     }
 
     labelidx = atoi(str+1);
-    if( fs.is_label_dep ){
-        generate_label();
-        fs.is_label_dep = False;
-    }else{
+    if( ! fs.is_label_dep ){
         if( ++cnt.l != labelidx ){
             error();
         }
-        paste_label(str);
     }
 
     get_token();
@@ -291,16 +279,7 @@ static void labelname(void)
 }
 
 
-static void program_name(void)
-{
-    is_token_or_err(NAME_N);
-    define_variable();
-
-    return ;
-}
-
-
-static void formal_parameters(void)
+static int formal_parameters(void)
 {
     int fpnum;
 
@@ -309,15 +288,15 @@ static void formal_parameters(void)
     fpnum = variable_names();
     is_token_or_err(RPAREN_N);
 
-    register_variable(fpnum, True);
+    register_variable(fpnum);
 
-    return ;
+    return fpnum;
 }
 
 
 static void variable_declaration(void)
 {
-    int varnum;
+    int varnum = 0;
 
     // 'int' var-names ';'
     if( is_token_(INT_N) ){
@@ -325,7 +304,7 @@ static void variable_declaration(void)
         is_token_or_err(SEMI_N);
     }
 
-    register_variable(varnum, False);
+    register_variable(varnum);
 
     return ;
 }
@@ -353,7 +332,7 @@ static void statements(void)
 
 static int is_statement(void)
 {
-    init_statreg();
+    initialize_statreg();
 
     if( is_val_update_statement() || is_if_statement() || is_goto_statement() ){
         register_statement(s.stype, s.a, s.b);
@@ -443,6 +422,7 @@ static int is_goto_statement(void)
     // label ';'
     fs.is_label_dep = True;
     labelname();
+    fs.is_label_dep = False;
     is_token_or_err(SEMI_N);
     if( s.stype == IF_GOTO_STAT ){
         s.b = labelidx;

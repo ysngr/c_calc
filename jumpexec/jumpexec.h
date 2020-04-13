@@ -44,6 +44,10 @@
 #define IF_GOTO_STAT 6
 #define RETURN_STAT 7
 
+#define STATELEM_STYPE 0
+#define STATELEM_A 1
+#define STATELEM_B 2
+
 
 /* scan.c */
 extern char str[MAXSTRLEN];
@@ -52,15 +56,20 @@ int scan(void);
 void finalize_scan(void);
 
 /* parse.c */
-void parse(void);
+int parse(void);
 
 /* register.c */
-void register_variable(int, int);
+void initialize_register(void);
+void register_variable(int);
 void register_statement(int, int, int);
-void register_paramvalue(int*, int);
-void update_variable(int, int);
+void check_label_link(void);
+void set_variable(int, int);
+int get_variable(int);
+void get_statement(int, int*);
+void finalize_register(void);
+void print_variables(void);
 
-// debug function
-void print_statlist(void);
+/* execute.c */
+int execute(int, char*[]);
 
 #endif
