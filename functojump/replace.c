@@ -119,6 +119,9 @@ void replace(void)
                 while( rescan() != SEMI_N ){
                     reset_genbuf();
                 }
+                for( i = signbase; i <= 2*signbase; i++ ){
+                    fprintf(wfp, "\n    L%d: v%d = 1;", labelcounter++, i);
+                }
                 break;
             case LABEL_N :
                 for( i = strlen(genbuf)-1; genbuf[i] != '\n'; i-- );
