@@ -123,8 +123,4 @@ void flatten(char*, char*);
 /* replace.c */
 void replace(void);
 
-
-// debug function
-void print_list(void);
-
 #endif

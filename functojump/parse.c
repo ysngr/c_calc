@@ -220,8 +220,6 @@ void parse(void)
         check_label_link();
     }while( is_token_(END_OF_FILE) == False );
 
-    // print_list();  // for debug
-
     return ;
 }
 

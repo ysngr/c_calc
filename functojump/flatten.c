@@ -24,7 +24,6 @@ static void flatten_re(struct condlist*);
 static void generate_flattened_stats(void);
 static void free_condlist(struct condlist*);
 
-static void print_condlist(void);
 
 
 void initialize_condlist(void)
@@ -101,8 +100,6 @@ static void flatten_cond(struct condlist *c)
         }
     }
     flatten_cond(c->next);
-
-    // print_condlist();///debug
 
     return ;
 }
@@ -364,27 +361,6 @@ void finalize_condlist(void)
         cp = cp->next;
         free_condlist(rm);
     }
-
-    return ;
-}
-
-
-
-// debug function
-static void print_condlist(void)
-{
-    struct condlist *cp;
-
-    for( cp = cs; cp != NULL; cp = cp->next ){
-        if( cp->stattype == IF_STAT ){
-            printf("type=if : cond = %s, label = %s\n", cp->cond, cp->label);
-        }else if( cp->stattype == GOTO_STAT ){
-            printf("type=goto : label = %s\n", cp->label);
-        }else{
-            printf("type=arr : label = %s\n", cp->label);
-        }
-    }
-    printf("\n");
 
     return ;
 }

@@ -475,36 +475,3 @@ void increment_arrlabel_counter(void)
 
     return ;
 }
-
-
-
-// debug function
-void print_list(void)
-{
-    struct fproglist *fp;
-    struct varlist *vp;
-    struct labellist *lp;
-
-    // funcprog
-    for( fp = fs; fp != NULL; fp = fp->nextfprog ){
-        printf("Funcprog = %s\n", fp->fprogname);
-        // formal parameters
-        printf("Formal parameters =");
-        for( vp = fp->vars; vp != NULL && vp->is_formal_parameter; vp = vp->nextvar ){
-            printf(" %s(%d)", vp->varname, vp->repvaridx);
-        }
-        printf("\n");
-        // vars
-        printf("Vars =");
-        for( ; vp != NULL; vp = vp->nextvar ){
-            printf(" %s(%d)", vp->varname, vp->repvaridx);
-        }
-        printf("\n");
-        // labels
-        printf("Labels =");
-        for( lp = fp->labels; lp != NULL; lp = lp->nextlabel ){
-            printf(" %s(%d)", lp->labelname, lp->replabelidx);
-        }
-        printf("\n\n");
-    }
-}

@@ -47,8 +47,6 @@ static void exungetc(char);
 static void inline_function(void);
 static void finalize_expand(void);
 
-static void print_sublist(void);
-
 
 
 static void initialize_expand(char *fname)
@@ -161,7 +159,6 @@ void expand(char *funcname, char *retvar)
     inline_function();
     strcpy(retvar, exstr);
 
-    // print_sublist();  // for debug
     finalize_expand();
 
     return ;
@@ -389,22 +386,6 @@ static void finalize_expand(void)
         }
         free(ss);
     }
-
-    return ;
-}
-
-
-
-// debug function
-static void print_sublist(void)
-{
-    struct sublist *sp;
-
-    printf("Sublist of function \"%s\" =", funcname);
-    for( sp = ss; sp != NULL; sp = sp->nextsub ){
-        printf(" [%s->%s]", sp->origname, sp->newname);
-    }
-    printf("\n\n");
 
     return ;
 }
