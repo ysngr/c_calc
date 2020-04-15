@@ -29,6 +29,7 @@ static void rescanc(void);
 static int rescan(void);
 static void regenerate(void);
 static void regenerate_repname(void);
+static void regenerate_declared_variables(void);
 static void finalize_replace(void);
 
 
@@ -100,28 +101,9 @@ void replace(void)
                 regenerate();
                 regenerate_repname();
                 break;
-            case LBRACE_N :
-                if( rescan() != INT_N ){
-                    strcat(genbuf+genidx-1, "int ");
-                    genidx += 5;
-                    genbuf[genidx] = '\0';
-                }
             case INT_N :
                 regenerate();
-                for( i = fpnum+1; i <= 2*signbase; i++ ){
-                    fprintf(wfp, "v%d", i);
-                    if( i != 2 * signbase ){
-                        fprintf(wfp, ", ");
-                    }else{
-                        fprintf(wfp, ";");
-                    }
-                }
-                while( rescan() != SEMI_N ){
-                    reset_genbuf();
-                }
-                for( i = signbase; i <= 2*signbase; i++ ){
-                    fprintf(wfp, "\n    L%d: v%d = 1;", labelcounter++, i);
-                }
+                regenerate_declared_variables();
                 break;
             case LABEL_N :
                 for( i = strlen(genbuf)-1; genbuf[i] != '\n'; i-- );
@@ -278,12 +260,38 @@ static void regenerate_repname(void)
     }
     // label
     else if( (idx = get_replabelidx(varname)) != False ){
-        fprintf(wfp, "L%d", idx);
+        fprintf(wfp, "L%d", idx+signbase);//ok?
     }
     // otherwise
     else{
         fprintf(wfp, "%s", restr);
     }
+
+    return ;
+}
+
+
+static void regenerate_declared_variables(void)
+{
+    int i;
+    char indent[5] = "    ";
+
+    for( i = fpnum+1; i <= 2*signbase; i++ ){
+        fprintf(wfp, "v%d", i);
+        if( i != 2 * signbase ){
+            fprintf(wfp, ", ");
+        }else{
+            fprintf(wfp, ";");
+        }
+    }
+
+    while( rescan() != SEMI_N );
+    reset_genbuf();
+
+    for( i = signbase+1; i <= 2*signbase; i++ ){
+        fprintf(wfp, "\n%sL%d: v%d = 1;", indent, labelcounter++, i);
+    }
+    fprintf(wfp, "\n");
 
     return ;
 }

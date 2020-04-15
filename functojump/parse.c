@@ -258,6 +258,9 @@ static void variable_declaration(void)
     if( generate_is_token_(INT_N) ){
         variable_names();
         generate_is_token_or_err(SEMI_N);
+    }else{
+        generate(INT_N);
+        generate(SEMI_N);
     }
 
     return ;
