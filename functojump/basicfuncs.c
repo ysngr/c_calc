@@ -97,3 +97,19 @@ _add(x, y){
     L10:
     return(x);
 }
+
+_sub(x, y){
+    return(x); /* TODO : expand */
+}
+
+_mul(x, y){
+    return(x); /* TODO : expand */
+}
+
+_div(x, y){
+    return(x); /* TODO : expand */
+}
+
+_mod(x, y){
+    return(x); /* TODO : expand */
+}

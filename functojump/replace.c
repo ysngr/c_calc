@@ -260,7 +260,7 @@ static void regenerate_repname(void)
     }
     // label
     else if( (idx = get_replabelidx(varname)) != False ){
-        fprintf(wfp, "L%d", idx+signbase);//ok?
+        fprintf(wfp, "L%d", idx+signbase);
     }
     // otherwise
     else{
